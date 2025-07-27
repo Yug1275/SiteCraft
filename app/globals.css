@@ -98,7 +98,7 @@
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  @apply bg-muted-foreground/50;
+  background-color: hsla(var(--muted-foreground), 0.5);
 }
 
 /* Smooth transitions */

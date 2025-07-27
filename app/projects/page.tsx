@@ -34,10 +34,35 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
+type Project = {
+  id: number
+  name: string
+  location: string
+  description?: string
+  budget: number
+  startDate: string
+  endDate: string
+  manager?: string
+  progress: number
+  status: string
+  workers: number
+  createdDate: string
+}
+
+type Manager = {
+  id: number
+  name: string
+  email: string
+  phone: string
+  experience?: string
+  specialization?: string
+  createdDate: string
+}
+
 export default function ProjectsPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [projects, setProjects] = useState([])
-  const [managers, setManagers] = useState([])
+  const [projects, setProjects] = useState<Project[]>([])
+  const [managers, setManagers] = useState<Manager[]>([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isManagerDialogOpen, setIsManagerDialogOpen] = useState(false)
   const { toast } = useToast()
@@ -179,7 +204,7 @@ export default function ProjectsPage() {
     })
   }
 
-  const handleViewProject = (project) => {
+  const handleViewProject = (project: Project) => {
     // Create detailed view logic
     toast({
       title: "Project Details",

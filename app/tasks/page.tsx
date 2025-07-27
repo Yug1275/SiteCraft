@@ -31,10 +31,23 @@ import {
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
+type Task = {
+  id: number
+  title: string
+  description: string
+  assignee: string
+  project: string
+  priority: string
+  status: string
+  dueDate: string
+  createdDate: string
+  progress: number
+}
+
 export default function TasksPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
-  const [tasks, setTasks] = useState([])
+  const [tasks, setTasks] = useState<Task[]>([])
 
   const { toast } = useToast()
 
