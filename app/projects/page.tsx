@@ -18,7 +18,20 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Building2, Plus, Search, Calendar, DollarSign, MapPin, Users, Clock, Edit, Eye, UserPlus } from "lucide-react"
+import {
+  Building2,
+  Plus,
+  Search,
+  Calendar,
+  DollarSign,
+  MapPin,
+  Users,
+  Clock,
+  Edit,
+  Eye,
+  UserPlus,
+  Trash2,
+} from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 export default function ProjectsPage() {
@@ -47,6 +60,9 @@ export default function ProjectsPage() {
     experience: "",
     specialization: "",
   })
+
+  const [editDialogOpen, setEditDialogOpen] = useState(false)
+  const [editingProject, setEditingProject] = useState(null)
 
   useEffect(() => {
     // Load data from localStorage
@@ -150,6 +166,74 @@ export default function ProjectsPage() {
       specialization: "",
     })
     setIsManagerDialogOpen(false)
+  }
+
+  const handleRemoveProject = (projectId) => {
+    const updatedProjects = projects.filter((p) => p.id !== projectId)
+    setProjects(updatedProjects)
+    localStorage.setItem("sitecraft-projects", JSON.stringify(updatedProjects))
+
+    toast({
+      title: "Success",
+      description: "Project removed successfully",
+    })
+  }
+
+  const handleViewProject = (project) => {
+    // Create detailed view logic
+    toast({
+      title: "Project Details",
+      description: `Viewing details for ${project.name}`,
+    })
+  }
+
+  const handleEditProject = (project) => {
+    setEditingProject(project)
+    setFormData({
+      name: project.name,
+      location: project.location,
+      description: project.description || "",
+      budget: project.budget.toString(),
+      startDate: project.startDate,
+      endDate: project.endDate,
+      manager: project.manager || "",
+    })
+    setEditDialogOpen(true)
+  }
+
+  const handleUpdateProject = () => {
+    if (!formData.name || !formData.location || !formData.budget || !formData.startDate || !formData.endDate) {
+      toast({
+        title: "Error",
+        description: "Please fill in all required fields",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const updatedProjects = projects.map((p) =>
+      p.id === editingProject.id ? { ...p, ...formData, budget: Number.parseFloat(formData.budget) } : p,
+    )
+
+    setProjects(updatedProjects)
+    localStorage.setItem("sitecraft-projects", JSON.stringify(updatedProjects))
+
+    toast({
+      title: "Success",
+      description: "Project updated successfully",
+    })
+
+    setFormData({
+      name: "",
+      location: "",
+      description: "",
+      budget: "",
+      startDate: "",
+      endDate: "",
+      manager: "",
+    })
+    setEditingProject(null)
+    setEditDialogOpen(false)
   }
 
   return (
@@ -352,6 +436,101 @@ export default function ProjectsPage() {
                 </div>
               </DialogContent>
             </Dialog>
+
+            <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+              <DialogContent className="max-w-2xl">
+                <DialogHeader>
+                  <DialogTitle>Edit Project</DialogTitle>
+                  <DialogDescription>Update project information</DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  {/* Same form fields as create dialog */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-name">Project Name *</Label>
+                      <Input
+                        id="edit-name"
+                        placeholder="Enter project name"
+                        value={formData.name}
+                        onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-location">Location *</Label>
+                      <Input
+                        id="edit-location"
+                        placeholder="Project location"
+                        value={formData.location}
+                        onChange={(e) => setFormData({ ...formData, location: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-description">Description</Label>
+                    <Textarea
+                      id="edit-description"
+                      placeholder="Project description"
+                      value={formData.description}
+                      onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-budget">Budget ($) *</Label>
+                      <Input
+                        id="edit-budget"
+                        type="number"
+                        placeholder="0"
+                        value={formData.budget}
+                        onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-start-date">Start Date *</Label>
+                      <Input
+                        id="edit-start-date"
+                        type="date"
+                        value={formData.startDate}
+                        onChange={(e) => setFormData({ ...formData, startDate: e.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="edit-end-date">End Date *</Label>
+                      <Input
+                        id="edit-end-date"
+                        type="date"
+                        value={formData.endDate}
+                        onChange={(e) => setFormData({ ...formData, endDate: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="edit-manager">Project Manager</Label>
+                    <Select
+                      value={formData.manager}
+                      onValueChange={(value) => setFormData({ ...formData, manager: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select manager" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {managers.map((manager) => (
+                          <SelectItem key={manager.id} value={manager.name}>
+                            {manager.name} - {manager.specialization}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="flex justify-end gap-2">
+                  <Button variant="outline" onClick={() => setEditDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button onClick={handleUpdateProject}>Update Project</Button>
+                </div>
+              </DialogContent>
+            </Dialog>
           </div>
         </div>
 
@@ -420,13 +599,26 @@ export default function ProjectsPage() {
                   )}
 
                   <div className="flex gap-2 pt-2">
-                    <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 bg-transparent"
+                      onClick={() => handleViewProject(project)}
+                    >
                       <Eye className="h-4 w-4 mr-1" />
                       View
                     </Button>
-                    <Button variant="outline" size="sm" className="flex-1 bg-transparent">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 bg-transparent"
+                      onClick={() => handleEditProject(project)}
+                    >
                       <Edit className="h-4 w-4 mr-1" />
                       Edit
+                    </Button>
+                    <Button variant="destructive" size="sm" onClick={() => handleRemoveProject(project.id)}>
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardContent>

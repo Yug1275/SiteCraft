@@ -143,3 +143,21 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+
+/* Footer enhancements */
+footer {
+  margin-top: auto;
+}
+
+footer a {
+  transition: all 0.2s ease;
+}
+
+footer a:hover {
+  transform: translateY(-1px);
+}
+
+/* Ensure main content takes full height minus footer */
+.min-h-screen {
+  min-height: calc(100vh - 80px);
+}

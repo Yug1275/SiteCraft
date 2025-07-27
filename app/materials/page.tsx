@@ -132,6 +132,15 @@ export default function MaterialsPage() {
   }
 
   const handleDeleteMaterial = (id: number) => {
+    if (materials.length <= 1) {
+      toast({
+        title: "Error",
+        description: "Cannot remove the last material. At least one material must remain.",
+        variant: "destructive",
+      })
+      return
+    }
+
     const updatedMaterials = materials.filter((m) => m.id !== id)
     setMaterials(updatedMaterials)
     localStorage.setItem("sitecraft-materials", JSON.stringify(updatedMaterials))

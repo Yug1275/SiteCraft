@@ -17,7 +17,18 @@ import {
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Users, Search, Calendar, Clock, CheckCircle, XCircle, Download, UserPlus, DollarSign } from "lucide-react"
+import {
+  Users,
+  Search,
+  Calendar,
+  Clock,
+  CheckCircle,
+  XCircle,
+  Download,
+  UserPlus,
+  DollarSign,
+  Trash2,
+} from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
 export default function LaborPage() {
@@ -147,6 +158,26 @@ export default function LaborPage() {
       project: "",
     })
     setIsDialogOpen(false)
+  }
+
+  const handleRemoveWorker = (workerId: number) => {
+    if (workers.length <= 1) {
+      toast({
+        title: "Error",
+        description: "Cannot remove the last worker. At least one worker must remain.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const updatedWorkers = workers.filter((w) => w.id !== workerId)
+    setWorkers(updatedWorkers)
+    localStorage.setItem("sitecraft-workers", JSON.stringify(updatedWorkers))
+
+    toast({
+      title: "Success",
+      description: "Worker removed successfully",
+    })
   }
 
   const exportReport = () => {
@@ -442,13 +473,18 @@ export default function LaborPage() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Button
-                          variant={worker.isPresent ? "destructive" : "default"}
-                          size="sm"
-                          onClick={() => toggleAttendance(worker.id)}
-                        >
-                          {worker.isPresent ? "Check Out" : "Check In"}
-                        </Button>
+                        <div className="flex gap-2">
+                          <Button
+                            variant={worker.isPresent ? "destructive" : "default"}
+                            size="sm"
+                            onClick={() => toggleAttendance(worker.id)}
+                          >
+                            {worker.isPresent ? "Check Out" : "Check In"}
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={() => handleRemoveWorker(worker.id)}>
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   ))}

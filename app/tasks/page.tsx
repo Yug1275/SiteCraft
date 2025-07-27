@@ -17,12 +17,46 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { ClipboardList, Plus, Search, Calendar, User, Clock, CheckCircle, AlertCircle, XCircle } from "lucide-react"
+import {
+  ClipboardList,
+  Plus,
+  Search,
+  Calendar,
+  User,
+  Clock,
+  CheckCircle,
+  AlertCircle,
+  XCircle,
+  Trash2,
+} from "lucide-react"
+import { useToast } from "@/hooks/use-toast"
 
 export default function TasksPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
   const [tasks, setTasks] = useState([])
+
+  const { toast } = useToast()
+
+  const handleRemoveTask = (taskId: number) => {
+    if (tasks.length <= 1) {
+      toast({
+        title: "Error",
+        description: "Cannot remove the last task. At least one task must remain.",
+        variant: "destructive",
+      })
+      return
+    }
+
+    const updatedTasks = tasks.filter((t) => t.id !== taskId)
+    setTasks(updatedTasks)
+    localStorage.setItem("sitecraft-tasks", JSON.stringify(updatedTasks))
+
+    toast({
+      title: "Success",
+      description: "Task removed successfully",
+    })
+  }
 
   const filteredTasks = tasks.filter((task) => {
     const matchesSearch =
@@ -317,6 +351,9 @@ export default function TasksPage() {
                       Update Status
                     </Button>
                   )}
+                  <Button variant="destructive" size="sm" onClick={() => handleRemoveTask(task.id)}>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
                 </div>
               </CardContent>
             </Card>

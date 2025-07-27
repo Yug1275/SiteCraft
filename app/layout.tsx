@@ -6,13 +6,13 @@ import { ThemeProvider } from "@/components/theme-provider"
 import { SidebarProvider } from "@/components/ui/sidebar"
 import { AppSidebar } from "@/components/app-sidebar"
 import { Toaster } from "@/components/ui/toaster"
+import { Footer } from "@/components/footer"
 
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "SiteCraft - Construction Management Dashboard",
   description: "Unified construction management platform for contractors and civil engineers",
-    generator: 'v0.dev'
 }
 
 export default function RootLayout({
@@ -25,9 +25,12 @@ export default function RootLayout({
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <SidebarProvider>
-            <div className="flex min-h-screen w-full">
-              <AppSidebar />
-              <main className="flex-1 overflow-hidden">{children}</main>
+            <div className="flex min-h-screen w-full flex-col">
+              <div className="flex flex-1">
+                <AppSidebar />
+                <main className="flex-1 overflow-hidden">{children}</main>
+              </div>
+              <Footer />
             </div>
             <Toaster />
           </SidebarProvider>
