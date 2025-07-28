@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -17,6 +17,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   ClipboardList,
   Plus,
@@ -28,47 +29,107 @@ import {
   AlertCircle,
   XCircle,
   Trash2,
+  AlertTriangle,
 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-
-type Task = {
-  id: number
-  title: string
-  description: string
-  assignee: string
-  project: string
-  priority: string
-  status: string
-  dueDate: string
-  createdDate: string
-  progress: number
-}
 
 export default function TasksPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterStatus, setFilterStatus] = useState("all")
-  const [tasks, setTasks] = useState<Task[]>([])
+  const [tasks, setTasks] = useState([])
+  const [projects, setProjects] = useState([])
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [notification, setNotification] = useState({ type: "", message: "" })
 
-  const { toast } = useToast()
+  // Form data state
+  const [formData, setFormData] = useState({
+    title: "",
+    description: "",
+    project: "",
+    assignee: "",
+    priority: "",
+    dueDate: "",
+  })
 
-  const handleRemoveTask = (taskId: number) => {
-    if (tasks.length <= 1) {
-      toast({
-        title: "Error",
-        description: "Cannot remove the last task. At least one task must remain.",
-        variant: "destructive",
-      })
+  useEffect(() => {
+    // Load data from localStorage
+    const savedTasks = localStorage.getItem("sitecraft-tasks")
+    const savedProjects = localStorage.getItem("sitecraft-projects")
+
+    if (savedTasks) setTasks(JSON.parse(savedTasks))
+    if (savedProjects) setProjects(JSON.parse(savedProjects))
+  }, [])
+
+  const showNotification = (type, message) => {
+    setNotification({ type, message })
+    setTimeout(() => setNotification({ type: "", message: "" }), 5000)
+  }
+
+  const handleCreateTask = () => {
+    // Clear previous notifications
+    setNotification({ type: "", message: "" })
+
+    if (!formData.title || !formData.project || !formData.assignee || !formData.priority || !formData.dueDate) {
+      showNotification("error", "Please fill in all required fields")
       return
     }
 
+    const newTask = {
+      id: Date.now(),
+      title: formData.title,
+      description: formData.description || "No description provided",
+      project: formData.project,
+      assignee: formData.assignee,
+      priority: formData.priority,
+      dueDate: formData.dueDate,
+      status: "Pending",
+      progress: 0,
+      createdDate: new Date().toISOString(),
+    }
+
+    const updatedTasks = [...tasks, newTask]
+    setTasks(updatedTasks)
+    localStorage.setItem("sitecraft-tasks", JSON.stringify(updatedTasks))
+
+    showNotification("success", "Task created successfully")
+
+    // Reset form
+    setFormData({
+      title: "",
+      description: "",
+      project: "",
+      assignee: "",
+      priority: "",
+      dueDate: "",
+    })
+    setIsDialogOpen(false)
+  }
+
+  const handleRemoveTask = (taskId) => {
     const updatedTasks = tasks.filter((t) => t.id !== taskId)
     setTasks(updatedTasks)
     localStorage.setItem("sitecraft-tasks", JSON.stringify(updatedTasks))
 
-    toast({
-      title: "Success",
-      description: "Task removed successfully",
+    showNotification("success", "Task removed successfully")
+  }
+
+  const handleUpdateTaskStatus = (taskId, newStatus) => {
+    const updatedTasks = tasks.map((task) => {
+      if (task.id === taskId) {
+        let newProgress = task.progress
+        if (newStatus === "In Progress" && task.progress === 0) {
+          newProgress = 25
+        } else if (newStatus === "Completed") {
+          newProgress = 100
+        }
+        return { ...task, status: newStatus, progress: newProgress }
+      }
+      return task
     })
+
+    setTasks(updatedTasks)
+    localStorage.setItem("sitecraft-tasks", JSON.stringify(updatedTasks))
+
+    showNotification("success", `Task status updated to ${newStatus}`)
   }
 
   const filteredTasks = tasks.filter((task) => {
@@ -80,7 +141,7 @@ export default function TasksPage() {
     return matchesSearch && matchesStatus
   })
 
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status) => {
     switch (status) {
       case "Completed":
         return "secondary"
@@ -95,7 +156,7 @@ export default function TasksPage() {
     }
   }
 
-  const getPriorityColor = (priority: string) => {
+  const getPriorityColor = (priority) => {
     switch (priority) {
       case "Critical":
         return "destructive"
@@ -110,7 +171,7 @@ export default function TasksPage() {
     }
   }
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status) => {
     switch (status) {
       case "Completed":
         return <CheckCircle className="h-4 w-4 text-green-600" />
@@ -149,6 +210,30 @@ export default function TasksPage() {
       </header>
 
       <main className="flex-1 p-6 space-y-6">
+        {/* Notification */}
+        {notification.message && (
+          <Alert
+            className={
+              notification.type === "error"
+                ? "border-red-500 bg-red-50 dark:bg-red-950/20"
+                : "border-green-500 bg-green-50 dark:bg-green-950/20"
+            }
+          >
+            {notification.type === "error" ? (
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+            ) : (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            )}
+            <AlertDescription
+              className={
+                notification.type === "error" ? "text-red-800 dark:text-red-200" : "text-green-800 dark:text-green-200"
+              }
+            >
+              {notification.message}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">
           <Card className="border-0 shadow-lg">
@@ -218,7 +303,7 @@ export default function TasksPage() {
               </SelectContent>
             </Select>
           </div>
-          <Dialog>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-to-r from-indigo-600 to-indigo-700 hover:from-indigo-700 hover:to-indigo-800">
                 <Plus className="h-4 w-4 mr-2" />
@@ -230,69 +315,121 @@ export default function TasksPage() {
                 <DialogTitle>Create New Task</DialogTitle>
                 <DialogDescription>Assign a new task to your team members</DialogDescription>
               </DialogHeader>
+
+              {/* Dialog Notification */}
+              {notification.message && (
+                <Alert
+                  className={
+                    notification.type === "error"
+                      ? "border-red-500 bg-red-50 dark:bg-red-950/20"
+                      : "border-green-500 bg-green-50 dark:bg-green-950/20"
+                  }
+                >
+                  {notification.type === "error" ? (
+                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  )}
+                  <AlertDescription
+                    className={
+                      notification.type === "error"
+                        ? "text-red-800 dark:text-red-200"
+                        : "text-green-800 dark:text-green-200"
+                    }
+                  >
+                    {notification.message}
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="task-title">Task Title</Label>
-                  <Input id="task-title" placeholder="Enter task title" />
+                  <Label htmlFor="task-title">Task Title *</Label>
+                  <Input
+                    id="task-title"
+                    placeholder="Enter task title"
+                    value={formData.title}
+                    onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  />
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="task-description">Description</Label>
-                  <Textarea id="task-description" placeholder="Detailed task description" />
+                  <Textarea
+                    id="task-description"
+                    placeholder="Detailed task description"
+                    value={formData.description}
+                    onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="project">Project</Label>
-                    <Select>
+                    <Label htmlFor="project">Project *</Label>
+                    <Select
+                      value={formData.project}
+                      onValueChange={(value) => setFormData({ ...formData, project: value })}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select project" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="downtown">Downtown Office Complex</SelectItem>
-                        <SelectItem value="residential">Residential Tower A</SelectItem>
-                        <SelectItem value="mall">Shopping Mall Renovation</SelectItem>
+                        {projects.length === 0 ? (
+                          <SelectItem value="no-projects" disabled>
+                            No projects available
+                          </SelectItem>
+                        ) : (
+                          projects.map((project) => (
+                            <SelectItem key={project.id} value={project.name}>
+                              {project.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="assignee">Assignee</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select assignee" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="john">John Martinez</SelectItem>
-                        <SelectItem value="sarah">Sarah Wilson</SelectItem>
-                        <SelectItem value="mike">Mike Johnson</SelectItem>
-                        <SelectItem value="lisa">Lisa Chen</SelectItem>
-                        <SelectItem value="david">David Brown</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="assignee">Assignee *</Label>
+                    <Input
+                      id="assignee"
+                      placeholder="Enter assignee name"
+                      value={formData.assignee}
+                      onChange={(e) => setFormData({ ...formData, assignee: e.target.value })}
+                    />
                   </div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="priority">Priority</Label>
-                    <Select>
+                    <Label htmlFor="priority">Priority *</Label>
+                    <Select
+                      value={formData.priority}
+                      onValueChange={(value) => setFormData({ ...formData, priority: value })}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select priority" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="low">Low</SelectItem>
-                        <SelectItem value="medium">Medium</SelectItem>
-                        <SelectItem value="high">High</SelectItem>
-                        <SelectItem value="critical">Critical</SelectItem>
+                        <SelectItem value="Low">Low</SelectItem>
+                        <SelectItem value="Medium">Medium</SelectItem>
+                        <SelectItem value="High">High</SelectItem>
+                        <SelectItem value="Critical">Critical</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="due-date">Due Date</Label>
-                    <Input id="due-date" type="date" />
+                    <Label htmlFor="due-date">Due Date *</Label>
+                    <Input
+                      id="due-date"
+                      type="date"
+                      value={formData.dueDate}
+                      onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                    />
                   </div>
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline">Cancel</Button>
-                <Button>Create Task</Button>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleCreateTask}>Create Task</Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -360,9 +497,16 @@ export default function TasksPage() {
                     Edit Task
                   </Button>
                   {task.status !== "Completed" && (
-                    <Button size="sm" className="ml-auto">
-                      Update Status
-                    </Button>
+                    <Select value={task.status} onValueChange={(value) => handleUpdateTaskStatus(task.id, value)}>
+                      <SelectTrigger className="w-32 h-8">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Pending">Pending</SelectItem>
+                        <SelectItem value="In Progress">In Progress</SelectItem>
+                        <SelectItem value="Completed">Completed</SelectItem>
+                      </SelectContent>
+                    </Select>
                   )}
                   <Button variant="destructive" size="sm" onClick={() => handleRemoveTask(task.id)}>
                     <Trash2 className="h-4 w-4" />
@@ -382,14 +526,25 @@ export default function TasksPage() {
                 ? "Try adjusting your search or filter criteria"
                 : "Get started by creating your first task"}
             </p>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Task
+            {projects.length === 0 ? (
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-2">
+                  You need to create a project first before adding tasks
+                </p>
+                <Button asChild variant="outline">
+                  <a href="/projects">Go to Projects</a>
                 </Button>
-              </DialogTrigger>
-            </Dialog>
+              </div>
+            ) : (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Task
+                  </Button>
+                </DialogTrigger>
+              </Dialog>
+            )}
           </div>
         )}
       </main>

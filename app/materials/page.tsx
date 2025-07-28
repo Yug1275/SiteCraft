@@ -17,8 +17,20 @@ import {
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Package, Plus, Search, AlertTriangle, TrendingUp, TrendingDown, Edit, Trash2, Filter } from "lucide-react"
+import {
+  Package,
+  Plus,
+  Search,
+  AlertTriangle,
+  TrendingUp,
+  TrendingDown,
+  Edit,
+  Trash2,
+  Filter,
+  CheckCircle,
+} from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function MaterialsPage() {
   const [searchTerm, setSearchTerm] = useState("")
@@ -26,6 +38,7 @@ export default function MaterialsPage() {
   const [materials, setMaterials] = useState([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const { toast } = useToast()
+  const [notification, setNotification] = useState({ type: "", message: "" })
 
   const [formData, setFormData] = useState({
     name: "",
@@ -77,6 +90,11 @@ export default function MaterialsPage() {
     return "In Stock"
   }
 
+  const showNotification = (type, message) => {
+    setNotification({ type, message })
+    setTimeout(() => setNotification({ type: "", message: "" }), 5000)
+  }
+
   const handleCreateMaterial = () => {
     if (
       !formData.name ||
@@ -86,11 +104,7 @@ export default function MaterialsPage() {
       !formData.unit ||
       !formData.unitPrice
     ) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      })
+      showNotification("error", "Please fill in all required fields")
       return
     }
 
@@ -114,10 +128,7 @@ export default function MaterialsPage() {
     setMaterials(updatedMaterials)
     localStorage.setItem("sitecraft-materials", JSON.stringify(updatedMaterials))
 
-    toast({
-      title: "Success",
-      description: "Material added successfully",
-    })
+    showNotification("success", "Material added successfully")
 
     setFormData({
       name: "",
@@ -133,11 +144,7 @@ export default function MaterialsPage() {
 
   const handleDeleteMaterial = (id: number) => {
     if (materials.length <= 1) {
-      toast({
-        title: "Error",
-        description: "Cannot remove the last material. At least one material must remain.",
-        variant: "destructive",
-      })
+      showNotification("error", "Cannot remove the last material. At least one material must remain.")
       return
     }
 
@@ -145,10 +152,7 @@ export default function MaterialsPage() {
     setMaterials(updatedMaterials)
     localStorage.setItem("sitecraft-materials", JSON.stringify(updatedMaterials))
 
-    toast({
-      title: "Success",
-      description: "Material deleted successfully",
-    })
+    showNotification("success", "Material deleted successfully")
   }
 
   const lowStockCount = materials.filter((m) => m.currentStock < m.minimumStock).length
@@ -418,6 +422,29 @@ export default function MaterialsPage() {
           </CardContent>
         </Card>
       </main>
+      {/* Notification */}
+      {notification.message && (
+        <Alert
+          className={
+            notification.type === "error"
+              ? "border-red-500 bg-red-50 dark:bg-red-950/20"
+              : "border-green-500 bg-green-50 dark:bg-green-950/20"
+          }
+        >
+          {notification.type === "error" ? (
+            <AlertTriangle className="h-4 w-4 text-red-600" />
+          ) : (
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          )}
+          <AlertDescription
+            className={
+              notification.type === "error" ? "text-red-800 dark:text-red-200" : "text-green-800 dark:text-green-200"
+            }
+          >
+            {notification.message}
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   )
 }

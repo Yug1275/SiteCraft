@@ -18,6 +18,7 @@ import {
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   Building2,
   Plus,
@@ -31,41 +32,19 @@ import {
   Eye,
   UserPlus,
   Trash2,
+  AlertTriangle,
+  CheckCircle,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 
-type Project = {
-  id: number
-  name: string
-  location: string
-  description?: string
-  budget: number
-  startDate: string
-  endDate: string
-  manager?: string
-  progress: number
-  status: string
-  workers: number
-  createdDate: string
-}
-
-type Manager = {
-  id: number
-  name: string
-  email: string
-  phone: string
-  experience?: string
-  specialization?: string
-  createdDate: string
-}
-
 export default function ProjectsPage() {
   const [searchTerm, setSearchTerm] = useState("")
-  const [projects, setProjects] = useState<Project[]>([])
-  const [managers, setManagers] = useState<Manager[]>([])
+  const [projects, setProjects] = useState([])
+  const [managers, setManagers] = useState([])
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [isManagerDialogOpen, setIsManagerDialogOpen] = useState(false)
   const { toast } = useToast()
+  const [notification, setNotification] = useState({ type: "", message: "" })
 
   // Form states
   const [formData, setFormData] = useState({
@@ -117,13 +96,14 @@ export default function ProjectsPage() {
     }
   }
 
+  const showNotification = (type, message) => {
+    setNotification({ type, message })
+    setTimeout(() => setNotification({ type: "", message: "" }), 5000)
+  }
+
   const handleCreateProject = () => {
     if (!formData.name || !formData.location || !formData.budget || !formData.startDate || !formData.endDate) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      })
+      showNotification("error", "Please fill in all required fields")
       return
     }
 
@@ -141,10 +121,7 @@ export default function ProjectsPage() {
     setProjects(updatedProjects)
     localStorage.setItem("sitecraft-projects", JSON.stringify(updatedProjects))
 
-    toast({
-      title: "Success",
-      description: "Project created successfully",
-    })
+    showNotification("success", "Project created successfully")
 
     setFormData({
       name: "",
@@ -160,11 +137,7 @@ export default function ProjectsPage() {
 
   const handleCreateManager = () => {
     if (!managerData.name || !managerData.email || !managerData.phone) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      })
+      showNotification("error", "Please fill in all required fields")
       return
     }
 
@@ -178,10 +151,7 @@ export default function ProjectsPage() {
     setManagers(updatedManagers)
     localStorage.setItem("sitecraft-managers", JSON.stringify(updatedManagers))
 
-    toast({
-      title: "Success",
-      description: "Project manager added successfully",
-    })
+    showNotification("success", "Project manager added successfully")
 
     setManagerData({
       name: "",
@@ -198,18 +168,12 @@ export default function ProjectsPage() {
     setProjects(updatedProjects)
     localStorage.setItem("sitecraft-projects", JSON.stringify(updatedProjects))
 
-    toast({
-      title: "Success",
-      description: "Project removed successfully",
-    })
+    showNotification("success", "Project removed successfully")
   }
 
-  const handleViewProject = (project: Project) => {
+  const handleViewProject = (project) => {
     // Create detailed view logic
-    toast({
-      title: "Project Details",
-      description: `Viewing details for ${project.name}`,
-    })
+    showNotification("success", `Viewing details for ${project.name}`)
   }
 
   const handleEditProject = (project) => {
@@ -228,11 +192,7 @@ export default function ProjectsPage() {
 
   const handleUpdateProject = () => {
     if (!formData.name || !formData.location || !formData.budget || !formData.startDate || !formData.endDate) {
-      toast({
-        title: "Error",
-        description: "Please fill in all required fields",
-        variant: "destructive",
-      })
+      showNotification("error", "Please fill in all required fields")
       return
     }
 
@@ -243,10 +203,7 @@ export default function ProjectsPage() {
     setProjects(updatedProjects)
     localStorage.setItem("sitecraft-projects", JSON.stringify(updatedProjects))
 
-    toast({
-      title: "Success",
-      description: "Project updated successfully",
-    })
+    showNotification("success", "Project updated successfully")
 
     setFormData({
       name: "",
@@ -277,6 +234,29 @@ export default function ProjectsPage() {
 
       <main className="flex-1 p-6 space-y-6">
         {/* Header Actions */}
+        {/* Notification */}
+        {notification.message && (
+          <Alert
+            className={
+              notification.type === "error"
+                ? "border-red-500 bg-red-50 dark:bg-red-950/20"
+                : "border-green-500 bg-green-50 dark:bg-green-950/20"
+            }
+          >
+            {notification.type === "error" ? (
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+            ) : (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            )}
+            <AlertDescription
+              className={
+                notification.type === "error" ? "text-red-800 dark:text-red-200" : "text-green-800 dark:text-green-200"
+              }
+            >
+              {notification.message}
+            </AlertDescription>
+          </Alert>
+        )}
         <div className="flex flex-col sm:flex-row gap-4 justify-between">
           <div className="relative flex-1 max-w-md">
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />

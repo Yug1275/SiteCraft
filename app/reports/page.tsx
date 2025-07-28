@@ -17,8 +17,11 @@ import {
   Package,
   Building2,
   PieChart,
+  AlertTriangle,
+  CheckCircle,
 } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 export default function ReportsPage() {
   const [reportType, setReportType] = useState("overview")
@@ -27,6 +30,12 @@ export default function ReportsPage() {
   const [materials, setMaterials] = useState([])
   const [workers, setWorkers] = useState([])
   const { toast } = useToast()
+  const [notification, setNotification] = useState({ type: "", message: "" })
+
+  const showNotification = (type, message) => {
+    setNotification({ type, message })
+    setTimeout(() => setNotification({ type: "", message: "" }), 5000)
+  }
 
   useEffect(() => {
     const savedProjects = localStorage.getItem("sitecraft-projects")
@@ -91,10 +100,7 @@ export default function ReportsPage() {
     linkElement.setAttribute("download", exportFileDefaultName)
     linkElement.click()
 
-    toast({
-      title: "Success",
-      description: "Report exported successfully",
-    })
+    showNotification("success", "Report exported successfully")
   }
 
   return (
@@ -458,6 +464,29 @@ export default function ReportsPage() {
           </div>
         )}
       </main>
+      {/* Notification */}
+      {notification.message && (
+        <Alert
+          className={
+            notification.type === "error"
+              ? "border-red-500 bg-red-50 dark:bg-red-950/20"
+              : "border-green-500 bg-green-50 dark:bg-green-950/20"
+          }
+        >
+          {notification.type === "error" ? (
+            <AlertTriangle className="h-4 w-4 text-red-600" />
+          ) : (
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          )}
+          <AlertDescription
+            className={
+              notification.type === "error" ? "text-red-800 dark:text-red-200" : "text-green-800 dark:text-green-200"
+            }
+          >
+            {notification.message}
+          </AlertDescription>
+        </Alert>
+      )}
     </div>
   )
 }

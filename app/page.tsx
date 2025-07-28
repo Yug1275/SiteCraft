@@ -5,9 +5,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge"
 import { Progress } from "@/components/ui/progress"
 import { SidebarTrigger } from "@/components/ui/sidebar"
-import { Building2, Package, Users, AlertTriangle, TrendingUp, Calendar, DollarSign, Clock } from "lucide-react"
+import {
+  Building2,
+  Package,
+  Users,
+  AlertTriangle,
+  TrendingUp,
+  Calendar,
+  DollarSign,
+  Clock,
+  CheckCircle,
+} from "lucide-react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 
 type Material = {
   name: string
@@ -34,6 +45,13 @@ export default function Dashboard() {
   const [projects, setProjects] = useState<Project[]>([])
   const [materials, setMaterials] = useState<Material[]>([])
   const [workers, setWorkers] = useState<Worker[]>([])
+
+  const [notification, setNotification] = useState({ type: "", message: "" })
+
+  const showNotification = (type: string, message: string) => {
+    setNotification({ type, message })
+    setTimeout(() => setNotification({ type: "", message: "" }), 5000)
+  }
 
   useEffect(() => {
     // Load data from localStorage
@@ -97,6 +115,29 @@ export default function Dashboard() {
       </header>
 
       <main className="flex-1 p-6 space-y-6">
+        {/* Notification */}
+        {notification.message && (
+          <Alert
+            className={
+              notification.type === "error"
+                ? "border-red-500 bg-red-50 dark:bg-red-950/20"
+                : "border-green-500 bg-green-50 dark:bg-green-950/20"
+            }
+          >
+            {notification.type === "error" ? (
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+            ) : (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            )}
+            <AlertDescription
+              className={
+                notification.type === "error" ? "text-red-800 dark:text-red-200" : "text-green-800 dark:text-green-200"
+              }
+            >
+              {notification.message}
+            </AlertDescription>
+          </Alert>
+        )}
         {/* Stats Grid */}
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
           {stats.map((stat, index) => (
