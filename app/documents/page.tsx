@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Alert, AlertDescription } from "@/components/ui/alert"
 import {
   FileText,
   Upload,
@@ -29,14 +30,108 @@ import {
   Calendar,
   User,
   FolderOpen,
+  CheckCircle,
+  AlertTriangle,
 } from "lucide-react"
 
 export default function DocumentsPage() {
   const [searchTerm, setSearchTerm] = useState("")
   const [filterType, setFilterType] = useState("all")
   const [documents, setDocuments] = useState([])
+  const [projects, setProjects] = useState([])
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [notification, setNotification] = useState({ type: "", message: "" })
+
+  const [formData, setFormData] = useState({
+    name: "",
+    category: "",
+    project: "",
+    file: null,
+  })
 
   const categories = ["all", "Blueprints", "Reports", "Financial", "Photos", "Legal", "Manuals", "Contracts"]
+
+  useEffect(() => {
+    const savedDocuments = localStorage.getItem("sitecraft-documents")
+    const savedProjects = localStorage.getItem("sitecraft-projects")
+
+    if (savedDocuments) setDocuments(JSON.parse(savedDocuments))
+    if (savedProjects) setProjects(JSON.parse(savedProjects))
+  }, [])
+
+  const showNotification = (type, message) => {
+    setNotification({ type, message })
+    setTimeout(() => setNotification({ type: "", message: "" }), 5000)
+  }
+
+  const handleUploadDocument = () => {
+    setNotification({ type: "", message: "" })
+
+    if (!formData.name || !formData.category || !formData.project) {
+      showNotification("error", "Please fill in all required fields")
+      return
+    }
+
+    const fileInput = document.getElementById("file-upload")
+    const file = fileInput?.files?.[0]
+
+    if (!file) {
+      showNotification("error", "Please select a file to upload")
+      return
+    }
+
+    // Get file extension and size
+    const fileName = file.name
+    const fileExtension = fileName.split(".").pop()?.toLowerCase() || "unknown"
+    const fileSize = (file.size / 1024 / 1024).toFixed(2) + " MB"
+
+    // Determine file type for icon
+    let fileType = "document"
+    if (["jpg", "jpeg", "png", "gif", "bmp"].includes(fileExtension)) {
+      fileType = "images"
+    } else if (["xls", "xlsx", "csv"].includes(fileExtension)) {
+      fileType = "excel"
+    } else if (["pdf"].includes(fileExtension)) {
+      fileType = "pdf"
+    }
+
+    const newDocument = {
+      id: Date.now(),
+      name: formData.name,
+      category: formData.category,
+      project: formData.project,
+      type: fileType,
+      size: fileSize,
+      uploadedBy: "Current User", // You can make this dynamic
+      uploadDate: new Date().toISOString(),
+      fileName: fileName,
+      extension: fileExtension,
+    }
+
+    const updatedDocuments = [...documents, newDocument]
+    setDocuments(updatedDocuments)
+    localStorage.setItem("sitecraft-documents", JSON.stringify(updatedDocuments))
+
+    showNotification("success", "Document uploaded successfully")
+
+    // Reset form
+    setFormData({
+      name: "",
+      category: "",
+      project: "",
+      file: null,
+    })
+    if (fileInput) fileInput.value = ""
+    setIsDialogOpen(false)
+  }
+
+  const handleRemoveDocument = (docId) => {
+    const updatedDocuments = documents.filter((d) => d.id !== docId)
+    setDocuments(updatedDocuments)
+    localStorage.setItem("sitecraft-documents", JSON.stringify(updatedDocuments))
+
+    showNotification("success", "Document removed successfully")
+  }
 
   const filteredDocuments = documents.filter((doc) => {
     const matchesSearch =
@@ -47,7 +142,7 @@ export default function DocumentsPage() {
     return matchesSearch && matchesType
   })
 
-  const getFileIcon = (type: string) => {
+  const getFileIcon = (type) => {
     switch (type.toLowerCase()) {
       case "pdf":
         return <FileText className="h-5 w-5 text-red-600" />
@@ -60,7 +155,7 @@ export default function DocumentsPage() {
     }
   }
 
-  const getCategoryColor = (category: string) => {
+  const getCategoryColor = (category) => {
     switch (category) {
       case "Blueprints":
         return "default"
@@ -101,6 +196,30 @@ export default function DocumentsPage() {
       </header>
 
       <main className="flex-1 p-6 space-y-6">
+        {/* Notification */}
+        {notification.message && (
+          <Alert
+            className={
+              notification.type === "error"
+                ? "border-red-500 bg-red-50 dark:bg-red-950/20"
+                : "border-green-500 bg-green-50 dark:bg-green-950/20"
+            }
+          >
+            {notification.type === "error" ? (
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+            ) : (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            )}
+            <AlertDescription
+              className={
+                notification.type === "error" ? "text-red-800 dark:text-red-200" : "text-green-800 dark:text-green-200"
+              }
+            >
+              {notification.message}
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">
           <Card className="border-0 shadow-lg">
@@ -170,7 +289,7 @@ export default function DocumentsPage() {
               </SelectContent>
             </Select>
           </div>
-          <Dialog>
+          <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
             <DialogTrigger asChild>
               <Button className="bg-gradient-to-r from-teal-600 to-teal-700 hover:from-teal-700 hover:to-teal-800">
                 <Upload className="h-4 w-4 mr-2" />
@@ -182,19 +301,54 @@ export default function DocumentsPage() {
                 <DialogTitle>Upload New Document</DialogTitle>
                 <DialogDescription>Add a new document to your project files</DialogDescription>
               </DialogHeader>
+
+              {/* Dialog Notification */}
+              {notification.message && (
+                <Alert
+                  className={
+                    notification.type === "error"
+                      ? "border-red-500 bg-red-50 dark:bg-red-950/20"
+                      : "border-green-500 bg-green-50 dark:bg-green-950/20"
+                  }
+                >
+                  {notification.type === "error" ? (
+                    <AlertTriangle className="h-4 w-4 text-red-600" />
+                  ) : (
+                    <CheckCircle className="h-4 w-4 text-green-600" />
+                  )}
+                  <AlertDescription
+                    className={
+                      notification.type === "error"
+                        ? "text-red-800 dark:text-red-200"
+                        : "text-green-800 dark:text-green-200"
+                    }
+                  >
+                    {notification.message}
+                  </AlertDescription>
+                </Alert>
+              )}
+
               <div className="grid gap-4 py-4">
                 <div className="space-y-2">
-                  <Label htmlFor="file-upload">Select File</Label>
+                  <Label htmlFor="file-upload">Select File *</Label>
                   <Input id="file-upload" type="file" accept=".pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png" />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="doc-name">Document Name</Label>
-                  <Input id="doc-name" placeholder="Enter document name" />
+                  <Label htmlFor="doc-name">Document Name *</Label>
+                  <Input
+                    id="doc-name"
+                    placeholder="Enter document name"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label htmlFor="category">Category</Label>
-                    <Select>
+                    <Label htmlFor="category">Category *</Label>
+                    <Select
+                      value={formData.category}
+                      onValueChange={(value) => setFormData({ ...formData, category: value })}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select category" />
                       </SelectTrigger>
@@ -208,24 +362,36 @@ export default function DocumentsPage() {
                     </Select>
                   </div>
                   <div className="space-y-2">
-                    <Label htmlFor="project-select">Project</Label>
-                    <Select>
+                    <Label htmlFor="project-select">Project *</Label>
+                    <Select
+                      value={formData.project}
+                      onValueChange={(value) => setFormData({ ...formData, project: value })}
+                    >
                       <SelectTrigger>
                         <SelectValue placeholder="Select project" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="all">All Projects</SelectItem>
-                        <SelectItem value="downtown">Downtown Office Complex</SelectItem>
-                        <SelectItem value="residential">Residential Tower A</SelectItem>
-                        <SelectItem value="mall">Shopping Mall Renovation</SelectItem>
+                        {projects.length === 0 ? (
+                          <SelectItem value="no-projects" disabled>
+                            No projects available
+                          </SelectItem>
+                        ) : (
+                          projects.map((project) => (
+                            <SelectItem key={project.id} value={project.name}>
+                              {project.name}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline">Cancel</Button>
-                <Button>Upload Document</Button>
+                <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleUploadDocument}>Upload Document</Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -258,7 +424,7 @@ export default function DocumentsPage() {
                       <div className="flex items-center gap-2 mt-2">
                         <Badge variant={getCategoryColor(doc.category)}>{doc.category}</Badge>
                         <Badge variant="outline">{doc.project}</Badge>
-                        <Badge variant="secondary">{doc.type}</Badge>
+                        <Badge variant="secondary">{doc.extension?.toUpperCase()}</Badge>
                       </div>
                     </div>
                   </div>
@@ -269,7 +435,7 @@ export default function DocumentsPage() {
                     <Button variant="outline" size="sm">
                       <Download className="h-4 w-4" />
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => handleRemoveDocument(doc.id)}>
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
@@ -288,14 +454,25 @@ export default function DocumentsPage() {
                 ? "Try adjusting your search or filter criteria"
                 : "Get started by uploading your first document"}
             </p>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button>
-                  <Upload className="h-4 w-4 mr-2" />
-                  Upload Document
+            {projects.length === 0 ? (
+              <div className="text-center">
+                <p className="text-sm text-muted-foreground mb-2">
+                  You need to create a project first before uploading documents
+                </p>
+                <Button asChild variant="outline">
+                  <a href="/projects">Go to Projects</a>
                 </Button>
-              </DialogTrigger>
-            </Dialog>
+              </div>
+            ) : (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Upload className="h-4 w-4 mr-2" />
+                    Upload Document
+                  </Button>
+                </DialogTrigger>
+              </Dialog>
+            )}
           </div>
         )}
       </main>
