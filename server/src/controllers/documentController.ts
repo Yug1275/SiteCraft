@@ -3,9 +3,24 @@ import { supabase } from '../config/supabase';
 import { AuthRequest } from '../middleware/auth';
 import multer from 'multer';
 import path from 'path';
+import fs from 'fs';
 
-// Configure multer for memory storage (we upload to Supabase)
-const storage = multer.memoryStorage();
+const uploadDir = path.join(__dirname, '../../uploads');
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
+
+// Configure multer for disk storage
+const storage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, uploadDir);
+  },
+  filename: (req, file, cb) => {
+    const authReq = req as AuthRequest;
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, (authReq.user?.id || 'anon') + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
 export const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
@@ -62,24 +77,8 @@ export const uploadDocument = async (req: AuthRequest, res: Response): Promise<v
       return;
     }
 
-    // Upload to Supabase Storage
-    const fileName = `${req.user!.id}/${Date.now()}-${file.originalname}`;
-    const { error: uploadError } = await supabase.storage
-      .from('documents')
-      .upload(fileName, file.buffer, {
-        contentType: file.mimetype,
-      });
-
-    if (uploadError) {
-      console.error('Upload error:', uploadError);
-      res.status(500).json({ error: 'Failed to upload file' });
-      return;
-    }
-
     // Get public URL
-    const { data: urlData } = supabase.storage
-      .from('documents')
-      .getPublicUrl(fileName);
+    const publicUrl = `${process.env.API_URL || 'http://localhost:5000'}/uploads/${file.filename}`;
 
     // Save document metadata
     const ext = path.extname(file.originalname).toLowerCase().replace('.', '');
@@ -93,7 +92,7 @@ export const uploadDocument = async (req: AuthRequest, res: Response): Promise<v
       .insert({
         name,
         file_name: file.originalname,
-        file_url: urlData.publicUrl,
+        file_url: publicUrl,
         file_size: `${(file.size / 1024 / 1024).toFixed(2)} MB`,
         file_type: fileType,
         category: category || 'General',
@@ -129,9 +128,12 @@ export const deleteDocument = async (req: AuthRequest, res: Response): Promise<v
 
     if (doc?.file_url) {
       // Extract file path from URL for deletion
-      const urlParts = doc.file_url.split('/documents/');
-      if (urlParts[1]) {
-        await supabase.storage.from('documents').remove([urlParts[1]]);
+      const filename = doc.file_url.split('/uploads/')[1];
+      if (filename) {
+        const filePath = path.join(__dirname, '../../uploads', filename);
+        if (fs.existsSync(filePath)) {
+          fs.unlinkSync(filePath);
+        }
       }
     }
 

@@ -182,12 +182,12 @@ export default function LaborPage() {
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={exportReport}><Download className="h-4 w-4 mr-2" />Export Report</Button>
+            <Button variant="outline" onClick={exportReport} className="rounded-xl"><Download className="h-4 w-4 mr-2" />Export Report</Button>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"><UserPlus className="h-4 w-4 mr-2" />Add Worker</Button>
+                <Button className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-xl"><UserPlus className="h-4 w-4 mr-2" />Add Worker</Button>
               </DialogTrigger>
-              <DialogContent>
+              <DialogContent className="max-w-2xl backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-white/20 shadow-2xl rounded-2xl">
                 <DialogHeader><DialogTitle>Add New Worker</DialogTitle><DialogDescription>Add a new worker to your labor force</DialogDescription></DialogHeader>
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-2 gap-4">
@@ -218,55 +218,74 @@ export default function LaborPage() {
           </div>
         </div>
 
-        <Card className="border-0 shadow-lg">
-          <CardHeader><CardTitle>Daily Attendance - {new Date(selectedDate).toLocaleDateString()}</CardTitle><CardDescription>Mark attendance and track worker check-in/check-out times</CardDescription></CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="space-y-3">{[1,2,3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-            ) : workers.length === 0 ? (
-              <div className="text-center py-8">
-                <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No workers found</h3>
-                <p className="text-muted-foreground mb-4">Get started by adding your first worker</p>
-                <Button onClick={() => setIsDialogOpen(true)}><UserPlus className="h-4 w-4 mr-2" />Add Worker</Button>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader><TableRow>
-                  <TableHead>Worker</TableHead><TableHead>Role</TableHead><TableHead>Check In</TableHead>
-                  <TableHead>Check Out</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead>
-                </TableRow></TableHeader>
-                <TableBody>
-                  {filteredWorkers.map((w) => (
-                    <TableRow key={w.id}>
-                      <TableCell><div className="font-medium">{w.name}</div><div className="text-sm text-muted-foreground">{w.phone}</div></TableCell>
-                      <TableCell><Badge variant="outline">{w.role}</Badge></TableCell>
-                      <TableCell>{w.check_in_time ? <div className="flex items-center gap-2"><Clock className="h-4 w-4 text-green-600" />{w.check_in_time}</div> : <span className="text-muted-foreground">Not checked in</span>}</TableCell>
-                      <TableCell>{w.check_out_time ? <div className="flex items-center gap-2"><Clock className="h-4 w-4 text-red-600" />{w.check_out_time}</div> : <span className="text-muted-foreground">-</span>}</TableCell>
-                      <TableCell>
-                        <Badge variant={w.is_present ? "default" : "secondary"}>
-                          {w.is_present ? <><CheckCircle className="h-3 w-3 mr-1" />Present</> : <><XCircle className="h-3 w-3 mr-1" />Absent</>}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex gap-2">
-                          <Button variant={w.is_present ? "destructive" : "default"} size="sm" onClick={() => toggleAttendance(w)}>{w.is_present ? "Check Out" : "Check In"}</Button>
-                          <Button variant="outline" size="sm" onClick={() => setDeleteId(w.id)}><Trash2 className="h-4 w-4" /></Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        {loading ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="backdrop-blur-xl bg-white/60 dark:bg-slate-900/60 border border-white/20 shadow-xl rounded-2xl">
+                <CardContent className="p-6">
+                  <Skeleton className="h-12 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : workers.length === 0 ? (
+          <div className="text-center py-8">
+            <Users className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No workers found</h3>
+            <p className="text-muted-foreground mb-4">Get started by adding your first worker</p>
+            <Button className="bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 rounded-xl" onClick={() => setIsDialogOpen(true)}>
+              <UserPlus className="h-4 w-4 mr-2" />Add Worker
+            </Button>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredWorkers.map((w) => (
+              <Card key={w.id} className="backdrop-blur-xl bg-white/60 dark:bg-slate-900/60 border border-white/20 shadow-xl rounded-2xl transition-all hover:shadow-2xl hover:-translate-y-1">
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="text-xl font-bold">{w.name}</CardTitle>
+                      <CardDescription className="flex items-center gap-1">
+                        <Users className="h-3 w-3" />{w.role}
+                      </CardDescription>
+                    </div>
+                    <Badge variant={w.is_present ? "default" : "secondary"} className={w.is_present ? "bg-green-500/10 text-green-600 dark:text-green-400 hover:bg-green-500/20" : ""}>
+                      {w.is_present ? <><CheckCircle className="h-3 w-3 mr-1" />Present</> : <><XCircle className="h-3 w-3 mr-1" />Absent</>}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {w.phone && <p className="text-sm text-muted-foreground">Contact: {w.phone}</p>}
+                  
+                  <div className="grid grid-cols-2 gap-4 text-sm mt-4">
+                    <div className="p-3 rounded-lg bg-white/50 dark:bg-slate-800/50 border border-white/10 dark:border-slate-700/50">
+                      <span className="text-muted-foreground flex items-center gap-1 mb-1"><Clock className="h-3 w-3" /> Check In</span>
+                      <span className="font-medium text-green-600 dark:text-green-400">{w.check_in_time || "Not checked in"}</span>
+                    </div>
+                    <div className="p-3 rounded-lg bg-white/50 dark:bg-slate-800/50 border border-white/10 dark:border-slate-700/50">
+                      <span className="text-muted-foreground flex items-center gap-1 mb-1"><Clock className="h-3 w-3" /> Check Out</span>
+                      <span className="font-medium text-red-600 dark:text-red-400">{w.check_out_time || "-"}</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Button variant={w.is_present ? "destructive" : "default"} size="sm" onClick={() => toggleAttendance(w)} className="rounded-xl">
+                      {w.is_present ? "Check Out" : "Check In"}
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setDeleteId(w.id)} className="rounded-xl">
+                      <Trash2 className="h-4 w-4 mr-2" /> Remove
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </main>
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-white/20 shadow-2xl rounded-2xl">
           <AlertDialogHeader><AlertDialogTitle>Remove Worker</AlertDialogTitle><AlertDialogDescription>Are you sure? This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeleteWorker} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Remove</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeleteWorker} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">Remove</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

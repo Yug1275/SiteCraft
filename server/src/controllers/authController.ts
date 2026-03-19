@@ -146,7 +146,7 @@ export const googleAuth = async (req: AuthRequest, res: Response): Promise<void>
       .from('users')
       .select('*')
       .eq('email', email)
-      .single();
+      .maybeSingle();
 
     if (!user) {
       // Create new user

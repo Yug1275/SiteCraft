@@ -130,36 +130,13 @@ export default function TasksPage() {
   if (authLoading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>
   if (!isAuthenticated) return null
 
-  const TaskForm = ({ onSubmit, label }: { onSubmit: () => void; label: string }) => (
-    <div className="grid gap-4 py-4">
-      <div className="space-y-2"><Label>Title *</Label><Input placeholder="Task title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} /></div>
-      <div className="space-y-2"><Label>Description</Label><Textarea placeholder="Task description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} /></div>
-      <div className="grid grid-cols-3 gap-4">
-        <div className="space-y-2"><Label>Status</Label><Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
-          <SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Pending", "In Progress", "Completed"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
-        </Select></div>
-        <div className="space-y-2"><Label>Priority</Label><Select value={formData.priority} onValueChange={(v) => setFormData({ ...formData, priority: v })}>
-          <SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{["Low", "Medium", "High"].map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
-        </Select></div>
-        <div className="space-y-2"><Label>Due Date</Label><Input type="date" value={formData.due_date} onChange={(e) => setFormData({ ...formData, due_date: e.target.value })} /></div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2"><Label>Assignee</Label><Input placeholder="Assigned to" value={formData.assignee} onChange={(e) => setFormData({ ...formData, assignee: e.target.value })} /></div>
-        <div className="space-y-2"><Label>Project</Label><Select value={formData.project_id} onValueChange={(v) => setFormData({ ...formData, project_id: v })}>
-          <SelectTrigger><SelectValue placeholder="Select project" /></SelectTrigger><SelectContent>{projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
-        </Select></div>
-      </div>
-      <div className="flex justify-end gap-2"><Button variant="outline" onClick={() => { resetForm(); setIsDialogOpen(false); setEditDialogOpen(false) }}>Cancel</Button><Button onClick={onSubmit}>{label}</Button></div>
-    </div>
-  )
-
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-40 border-b bg-white/10 dark:bg-slate-900/30 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-16 items-center gap-4 px-6">
           <SidebarTrigger />
           <div className="flex-1">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent">Task Management</h1>
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">Task Management</h1>
             <p className="text-sm text-muted-foreground">Create, assign, and track construction tasks</p>
           </div>
         </div>
@@ -173,7 +150,7 @@ export default function TasksPage() {
             { title: "In Progress", value: taskCounts["In Progress"], icon: Clock, color: "text-blue-600" },
             { title: "Completed", value: taskCounts.Completed, icon: CheckCircle, color: "text-green-600" },
           ].map((s, i) => (
-            <Card key={i} className="border-0 shadow-lg">
+            <Card key={i} className="backdrop-blur-xl bg-white/60 dark:bg-slate-900/60 border border-white/20 shadow-xl rounded-2xl">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2"><CardTitle className="text-sm font-medium">{s.title}</CardTitle><s.icon className={`h-4 w-4 ${s.color}`} /></CardHeader>
               <CardContent>{loading ? <Skeleton className="h-7 w-16" /> : <div className="text-2xl font-bold">{s.value}</div>}</CardContent>
             </Card>
@@ -184,11 +161,15 @@ export default function TasksPage() {
           <div className="relative"><Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" /><Input placeholder="Search tasks..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10 w-64" /></div>
           <div className="flex gap-2">
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild><Button className="bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-700 hover:to-red-700"><Plus className="h-4 w-4 mr-2" />New Task</Button></DialogTrigger>
-              <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Create New Task</DialogTitle><DialogDescription>Add a new task to your project</DialogDescription></DialogHeader><TaskForm onSubmit={handleCreateTask} label="Create Task" /></DialogContent>
+              <DialogTrigger asChild><Button className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 shadow-lg"><Plus className="h-4 w-4 mr-2" />New Task</Button></DialogTrigger>
+              <DialogContent className="max-w-2xl backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-white/20 shadow-2xl rounded-2xl"><DialogHeader><DialogTitle>Create New Task</DialogTitle><DialogDescription>Add a new task to your project</DialogDescription></DialogHeader>
+                <TaskForm formData={formData} setFormData={setFormData} projects={projects} onSubmit={handleCreateTask} onCancel={() => { resetForm(); setIsDialogOpen(false); setEditDialogOpen(false) }} label="Create Task" />
+              </DialogContent>
             </Dialog>
             <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-              <DialogContent className="max-w-2xl"><DialogHeader><DialogTitle>Edit Task</DialogTitle><DialogDescription>Update task details</DialogDescription></DialogHeader><TaskForm onSubmit={handleUpdateTask} label="Update Task" /></DialogContent>
+              <DialogContent className="max-w-2xl backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-white/20 shadow-2xl rounded-2xl"><DialogHeader><DialogTitle>Edit Task</DialogTitle><DialogDescription>Update task details</DialogDescription></DialogHeader>
+                <TaskForm formData={formData} setFormData={setFormData} projects={projects} onSubmit={handleUpdateTask} onCancel={() => { resetForm(); setIsDialogOpen(false); setEditDialogOpen(false) }} label="Update Task" />
+              </DialogContent>
             </Dialog>
           </div>
         </div>
@@ -203,7 +184,7 @@ export default function TasksPage() {
             ) : (
               <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
                 {filteredTasks.map((task) => (
-                  <Card key={task.id} className="border-0 shadow-lg hover:shadow-xl transition-all">
+                  <Card key={task.id} className="backdrop-blur-xl bg-white/60 dark:bg-slate-900/60 border border-white/20 shadow-xl rounded-2xl transition-all hover:shadow-2xl hover:-translate-y-1">
                     <CardHeader className="pb-2">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-2">{getStatusIcon(task.status)}<CardTitle className="text-base">{task.title}</CardTitle></div>
@@ -241,3 +222,33 @@ export default function TasksPage() {
     </div>
   )
 }
+
+const TaskForm = ({ formData, setFormData, projects, onSubmit, onCancel, label }: { 
+  formData: any; 
+  setFormData: (data: any) => void;
+  projects: any[];
+  onSubmit: () => void; 
+  onCancel: () => void;
+  label: string;
+}) => (
+  <div className="grid gap-4 py-4">
+    <div className="space-y-2"><Label>Title *</Label><Input placeholder="Task title" value={formData.title} onChange={(e) => setFormData({ ...formData, title: e.target.value })} className="bg-white/50 dark:bg-slate-950/50" /></div>
+    <div className="space-y-2"><Label>Description</Label><Textarea placeholder="Task description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="bg-white/50 dark:bg-slate-950/50" /></div>
+    <div className="grid grid-cols-3 gap-4">
+      <div className="space-y-2"><Label>Status</Label><Select value={formData.status} onValueChange={(v) => setFormData({ ...formData, status: v })}>
+        <SelectTrigger className="bg-white/50 dark:bg-slate-950/50"><SelectValue /></SelectTrigger><SelectContent>{["Pending", "In Progress", "Completed"].map((s) => <SelectItem key={s} value={s}>{s}</SelectItem>)}</SelectContent>
+      </Select></div>
+      <div className="space-y-2"><Label>Priority</Label><Select value={formData.priority} onValueChange={(v) => setFormData({ ...formData, priority: v })}>
+        <SelectTrigger className="bg-white/50 dark:bg-slate-950/50"><SelectValue /></SelectTrigger><SelectContent>{["Low", "Medium", "High"].map((p) => <SelectItem key={p} value={p}>{p}</SelectItem>)}</SelectContent>
+      </Select></div>
+      <div className="space-y-2"><Label>Due Date</Label><Input type="date" value={formData.due_date} onChange={(e) => setFormData({ ...formData, due_date: e.target.value })} className="bg-white/50 dark:bg-slate-950/50" /></div>
+    </div>
+    <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-2"><Label>Assignee</Label><Input placeholder="Assigned to" value={formData.assignee} onChange={(e) => setFormData({ ...formData, assignee: e.target.value })} className="bg-white/50 dark:bg-slate-950/50" /></div>
+      <div className="space-y-2"><Label>Project</Label><Select value={formData.project_id} onValueChange={(v) => setFormData({ ...formData, project_id: v })}>
+        <SelectTrigger className="bg-white/50 dark:bg-slate-950/50"><SelectValue placeholder="Select project" /></SelectTrigger><SelectContent>{projects.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+      </Select></div>
+    </div>
+    <div className="flex justify-end gap-2 pt-4"><Button variant="outline" onClick={onCancel} className="bg-white/50 dark:bg-slate-800/50">Cancel</Button><Button onClick={onSubmit} className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg">{label}</Button></div>
+  </div>
+)

@@ -157,8 +157,8 @@ export default function DocumentsPage() {
             </Select>
           </div>
           <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogTrigger asChild><Button className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700"><Upload className="h-4 w-4 mr-2" />Upload Document</Button></DialogTrigger>
-            <DialogContent>
+            <DialogTrigger asChild><Button className="bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 rounded-xl"><Upload className="h-4 w-4 mr-2" />Upload Document</Button></DialogTrigger>
+            <DialogContent className="max-w-2xl backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-white/20 shadow-2xl rounded-2xl">
               <DialogHeader><DialogTitle>Upload Document</DialogTitle><DialogDescription>Upload a document to your project</DialogDescription></DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="space-y-2"><Label>Document Name *</Label><Input placeholder="Enter name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} /></div>
@@ -191,13 +191,13 @@ export default function DocumentsPage() {
         </div>
 
         {loading ? (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{[1,2,3].map((i) => <Card key={i} className="border-0 shadow-lg"><CardHeader><Skeleton className="h-5 w-48" /></CardHeader><CardContent><Skeleton className="h-20 w-full" /></CardContent></Card>)}</div>
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">{[1,2,3].map((i) => <Card key={i} className="backdrop-blur-xl bg-white/60 dark:bg-slate-900/60 border border-white/20 shadow-xl rounded-2xl"><CardHeader><Skeleton className="h-5 w-48" /></CardHeader><CardContent><Skeleton className="h-20 w-full" /></CardContent></Card>)}</div>
         ) : documents.length === 0 ? (
           <div className="text-center py-12"><FileText className="h-12 w-12 text-muted-foreground mx-auto mb-4" /><h3 className="text-lg font-semibold mb-2">No documents found</h3><p className="text-muted-foreground mb-4">Upload your first document</p><Button onClick={() => setIsDialogOpen(true)}><Upload className="h-4 w-4 mr-2" />Upload</Button></div>
         ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredDocuments.map((doc) => (
-              <Card key={doc.id} className="border-0 shadow-lg hover:shadow-xl transition-all">
+              <Card key={doc.id} className="backdrop-blur-xl bg-white/60 dark:bg-slate-900/60 border border-white/20 shadow-xl rounded-2xl transition-all hover:shadow-2xl hover:-translate-y-1">
                 <CardContent className="p-4">
                   <div className="flex items-start gap-4">
                     <div className="p-3 rounded-lg bg-slate-100 dark:bg-slate-800">{getFileIcon(doc.file_type)}</div>
@@ -223,8 +223,8 @@ export default function DocumentsPage() {
       </main>
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent><AlertDialogHeader><AlertDialogTitle>Delete Document</AlertDialogTitle><AlertDialogDescription>This will remove the document permanently.</AlertDialogDescription></AlertDialogHeader>
-        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeleteDocument} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
+        <AlertDialogContent className="backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-white/20 shadow-2xl rounded-2xl"><AlertDialogHeader><AlertDialogTitle>Delete Document</AlertDialogTitle><AlertDialogDescription>This will remove the document permanently.</AlertDialogDescription></AlertDialogHeader>
+        <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeleteDocument} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">Delete</AlertDialogAction></AlertDialogFooter></AlertDialogContent>
       </AlertDialog>
     </div>
   )

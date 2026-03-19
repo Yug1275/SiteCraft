@@ -3,6 +3,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import dotenv from 'dotenv';
+import path from 'path';
 
 import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
@@ -25,6 +26,9 @@ app.use(cors({
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Serve uploaded files statically
+app.use('/uploads', express.static(path.join(__dirname, '../../uploads')));
 
 // Health check
 app.get('/api/health', (_req, res) => {

@@ -11,7 +11,7 @@ import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
 import { toast } from "sonner"
 import { GoogleLogin } from "@react-oauth/google"
-import jwtDecode from "jwt-decode"
+import { jwtDecode } from "jwt-decode"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")

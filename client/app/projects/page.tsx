@@ -155,54 +155,13 @@ export default function ProjectsPage() {
 
   if (!isAuthenticated) return null
 
-  const ProjectForm = ({ onSubmit, submitLabel }: { onSubmit: () => void; submitLabel: string }) => (
-    <div className="grid gap-4 py-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Project Name *</Label>
-          <Input placeholder="Enter project name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} />
-        </div>
-        <div className="space-y-2">
-          <Label>Location *</Label>
-          <Input placeholder="Project location" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label>Description</Label>
-        <Textarea placeholder="Project description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} />
-      </div>
-      <div className="grid grid-cols-3 gap-4">
-        <div className="space-y-2">
-          <Label>Budget ($)</Label>
-          <Input type="number" placeholder="0" value={formData.budget} onChange={(e) => setFormData({ ...formData, budget: e.target.value })} />
-        </div>
-        <div className="space-y-2">
-          <Label>Start Date</Label>
-          <Input type="date" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} />
-        </div>
-        <div className="space-y-2">
-          <Label>End Date</Label>
-          <Input type="date" value={formData.end_date} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} />
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label>Project Manager</Label>
-        <Input placeholder="Manager name" value={formData.manager} onChange={(e) => setFormData({ ...formData, manager: e.target.value })} />
-      </div>
-      <div className="flex justify-end gap-2">
-        <Button variant="outline" onClick={() => { resetForm(); setIsDialogOpen(false); setEditDialogOpen(false) }}>Cancel</Button>
-        <Button onClick={onSubmit}>{submitLabel}</Button>
-      </div>
-    </div>
-  )
-
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-40 border-b bg-white/10 dark:bg-slate-900/30 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-16 items-center gap-4 px-6">
           <SidebarTrigger />
           <div className="flex-1">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">
               Project Management
             </h1>
             <p className="text-sm text-muted-foreground">Manage and track all your construction projects</p>
@@ -222,22 +181,34 @@ export default function ProjectsPage() {
                 <Plus className="h-4 w-4 mr-2" /> New Project
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-white/20 shadow-2xl rounded-2xl">
               <DialogHeader>
                 <DialogTitle>Create New Project</DialogTitle>
                 <DialogDescription>Add a new construction project to your portfolio</DialogDescription>
               </DialogHeader>
-              <ProjectForm onSubmit={handleCreateProject} submitLabel="Create Project" />
+              <ProjectForm 
+                formData={formData} 
+                setFormData={setFormData} 
+                onSubmit={handleCreateProject} 
+                onCancel={() => { resetForm(); setIsDialogOpen(false); setEditDialogOpen(false) }}
+                submitLabel="Create Project" 
+              />
             </DialogContent>
           </Dialog>
 
           <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-2xl backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-white/20 shadow-2xl rounded-2xl">
               <DialogHeader>
                 <DialogTitle>Edit Project</DialogTitle>
                 <DialogDescription>Update project information</DialogDescription>
               </DialogHeader>
-              <ProjectForm onSubmit={handleUpdateProject} submitLabel="Update Project" />
+              <ProjectForm 
+                formData={formData} 
+                setFormData={setFormData}
+                onSubmit={handleUpdateProject} 
+                onCancel={() => { resetForm(); setIsDialogOpen(false); setEditDialogOpen(false) }}
+                submitLabel="Update Project" 
+              />
             </DialogContent>
           </Dialog>
         </div>
@@ -261,7 +232,7 @@ export default function ProjectsPage() {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredProjects.map((project) => (
-              <Card key={project.id} className="border-0 shadow-lg hover:shadow-xl transition-all duration-200">
+              <Card key={project.id} className="backdrop-blur-xl bg-white/60 dark:bg-slate-900/60 border border-white/20 shadow-xl rounded-2xl transition-all duration-300 hover:shadow-2xl hover:-translate-y-1">
                 <CardHeader>
                   <div className="flex items-start justify-between">
                     <div className="space-y-1">
@@ -285,7 +256,7 @@ export default function ProjectsPage() {
                   </div>
                   {project.manager && <div className="text-sm"><span className="font-medium">Manager: </span><span className="text-muted-foreground">{project.manager}</span></div>}
                   <div className="flex gap-2 pt-2">
-                    <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditProject(project)}>
+                    <Button variant="outline" size="sm" className="flex-1 bg-white/50 dark:bg-slate-800/50 hover:bg-white/80 dark:hover:bg-slate-800/80" onClick={() => handleEditProject(project)}>
                       <Edit className="h-4 w-4 mr-1" />Edit
                     </Button>
                     <Button variant="destructive" size="sm" onClick={() => setDeleteId(project.id)}>
@@ -314,3 +285,50 @@ export default function ProjectsPage() {
     </div>
   )
 }
+
+const ProjectForm = ({ formData, setFormData, onSubmit, onCancel, submitLabel }: { 
+  formData: any; 
+  setFormData: (data: any) => void;
+  onSubmit: () => void; 
+  onCancel: () => void;
+  submitLabel: string;
+}) => (
+  <div className="grid gap-4 py-4">
+    <div className="grid grid-cols-2 gap-4">
+      <div className="space-y-2">
+        <Label>Project Name *</Label>
+        <Input placeholder="Enter project name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="bg-white/50 dark:bg-slate-950/50" />
+      </div>
+      <div className="space-y-2">
+        <Label>Location *</Label>
+        <Input placeholder="Project location" value={formData.location} onChange={(e) => setFormData({ ...formData, location: e.target.value })} className="bg-white/50 dark:bg-slate-950/50" />
+      </div>
+    </div>
+    <div className="space-y-2">
+      <Label>Description</Label>
+      <Textarea placeholder="Project description" value={formData.description} onChange={(e) => setFormData({ ...formData, description: e.target.value })} className="bg-white/50 dark:bg-slate-950/50" />
+    </div>
+    <div className="grid grid-cols-3 gap-4">
+      <div className="space-y-2">
+        <Label>Budget ($)</Label>
+        <Input type="number" placeholder="0" value={formData.budget} onChange={(e) => setFormData({ ...formData, budget: e.target.value })} className="bg-white/50 dark:bg-slate-950/50" />
+      </div>
+      <div className="space-y-2">
+        <Label>Start Date</Label>
+        <Input type="date" value={formData.start_date} onChange={(e) => setFormData({ ...formData, start_date: e.target.value })} className="bg-white/50 dark:bg-slate-950/50" />
+      </div>
+      <div className="space-y-2">
+        <Label>End Date</Label>
+        <Input type="date" value={formData.end_date} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} className="bg-white/50 dark:bg-slate-950/50" />
+      </div>
+    </div>
+    <div className="space-y-2">
+      <Label>Project Manager</Label>
+      <Input placeholder="Manager name" value={formData.manager} onChange={(e) => setFormData({ ...formData, manager: e.target.value })} className="bg-white/50 dark:bg-slate-950/50" />
+    </div>
+    <div className="flex justify-end gap-2 pt-4">
+      <Button variant="outline" onClick={onCancel} className="bg-white/50 dark:bg-slate-800/50">Cancel</Button>
+      <Button onClick={onSubmit} className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg">{submitLabel}</Button>
+    </div>
+  </div>
+)

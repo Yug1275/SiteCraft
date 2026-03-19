@@ -16,7 +16,7 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Progress } from "@/components/ui/progress"
 import {
   Package, Plus, Search, AlertTriangle, TrendingUp, TrendingDown, Trash2, Filter,
 } from "lucide-react"
@@ -178,7 +178,7 @@ export default function MaterialsPage() {
             <DialogTrigger asChild>
               <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800"><Plus className="h-4 w-4 mr-2" />Add Material</Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-white/20 shadow-2xl rounded-2xl">
               <DialogHeader><DialogTitle>Add New Material</DialogTitle><DialogDescription>Add a new material to your inventory</DialogDescription></DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid grid-cols-2 gap-4">
@@ -205,52 +205,80 @@ export default function MaterialsPage() {
           </Dialog>
         </div>
 
-        <Card className="border-0 shadow-lg">
-          <CardHeader><CardTitle>Materials Inventory</CardTitle><CardDescription>Complete list of all materials with stock levels and pricing</CardDescription></CardHeader>
-          <CardContent>
-            {loading ? (
-              <div className="space-y-3">{[1,2,3].map((i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
-            ) : materials.length === 0 ? (
-              <div className="text-center py-8">
-                <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">No materials found</h3>
-                <p className="text-muted-foreground mb-4">Get started by adding your first material</p>
-                <Button onClick={() => setIsDialogOpen(true)}><Plus className="h-4 w-4 mr-2" />Add Material</Button>
-              </div>
-            ) : (
-              <Table>
-                <TableHeader><TableRow>
-                  <TableHead>Material</TableHead><TableHead>Category</TableHead><TableHead>Stock Level</TableHead>
-                  <TableHead>Unit Price</TableHead><TableHead>Total Value</TableHead><TableHead>Status</TableHead><TableHead>Actions</TableHead>
-                </TableRow></TableHeader>
-                <TableBody>
-                  {filteredMaterials.map((m) => (
-                    <TableRow key={m.id}>
-                      <TableCell><div className="font-medium">{m.name}</div><div className="text-sm text-muted-foreground">{m.supplier}</div></TableCell>
-                      <TableCell>{m.category}</TableCell>
-                      <TableCell>
-                        <div className="flex items-center gap-2">{getStatusIcon(m.current_stock, m.minimum_stock)}<span>{m.current_stock} {m.unit}</span></div>
-                        <div className="text-xs text-muted-foreground">Min: {m.minimum_stock} {m.unit}</div>
-                      </TableCell>
-                      <TableCell>${(m.unit_price || 0).toFixed(2)}</TableCell>
-                      <TableCell>${((m.current_stock || 0) * (m.unit_price || 0)).toFixed(2)}</TableCell>
-                      <TableCell><Badge variant={getStatusColor(m.current_stock, m.minimum_stock) as any}>{getStatusLabel(m.current_stock, m.minimum_stock)}</Badge></TableCell>
-                      <TableCell>
-                        <Button variant="outline" size="sm" onClick={() => setDeleteId(m.id)}><Trash2 className="h-4 w-4" /></Button>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        {loading ? (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {[1, 2, 3].map((i) => (
+              <Card key={i} className="backdrop-blur-xl bg-white/60 dark:bg-slate-900/60 border border-white/20 shadow-xl rounded-2xl">
+                <CardContent className="p-6">
+                  <Skeleton className="h-12 w-full" />
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        ) : materials.length === 0 ? (
+          <div className="text-center py-8">
+            <Package className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No materials found</h3>
+            <p className="text-muted-foreground mb-4">Get started by adding your first material</p>
+            <Button className="bg-gradient-to-r from-green-600 to-green-700 hover:from-green-700 hover:to-green-800" onClick={() => setIsDialogOpen(true)}>
+              <Plus className="h-4 w-4 mr-2" />Add Material
+            </Button>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+            {filteredMaterials.map((m) => (
+              <Card key={m.id} className="backdrop-blur-xl bg-white/60 dark:bg-slate-900/60 border border-white/20 shadow-xl rounded-2xl transition-all hover:shadow-2xl hover:-translate-y-1">
+                <CardHeader className="pb-2">
+                  <div className="flex items-start justify-between">
+                    <div className="space-y-1">
+                      <CardTitle className="text-xl font-bold">{m.name}</CardTitle>
+                      <CardDescription className="flex items-center gap-1">
+                        <Package className="h-3 w-3" />{m.category}
+                      </CardDescription>
+                    </div>
+                    <Badge variant={getStatusColor(m.current_stock, m.minimum_stock) as any}>
+                      {getStatusLabel(m.current_stock, m.minimum_stock)}
+                    </Badge>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {m.supplier && <p className="text-sm text-muted-foreground line-clamp-1">Supplier: {m.supplier}</p>}
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="flex items-center gap-1">
+                        {getStatusIcon(m.current_stock, m.minimum_stock)}
+                        Stock Level
+                      </span>
+                      <span className="font-medium">{m.current_stock} / {m.minimum_stock} {m.unit}</span>
+                    </div>
+                    <Progress value={Math.min(100, (m.current_stock / Math.max(1, m.minimum_stock)) * 100)} className={`h-2 ${m.current_stock < m.minimum_stock ? "bg-red-200" : ""}`} />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="p-3 rounded-lg bg-white/50 dark:bg-slate-800/50 border border-white/10 dark:border-slate-700/50">
+                      <span className="text-muted-foreground block mb-1">Unit Price</span>
+                      <span className="font-semibold">${(m.unit_price || 0).toFixed(2)}</span>
+                    </div>
+                    <div className="p-3 rounded-lg bg-white/50 dark:bg-slate-800/50 border border-white/10 dark:border-slate-700/50">
+                      <span className="text-muted-foreground block mb-1">Total Value</span>
+                      <span className="font-semibold">${((m.current_stock || 0) * (m.unit_price || 0)).toFixed(2)}</span>
+                    </div>
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2">
+                    <Button variant="outline" size="sm" onClick={() => setDeleteId(m.id)}>
+                      <Trash2 className="h-4 w-4 mr-2" /> Delete
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )}
       </main>
 
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
+        <AlertDialogContent className="backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-white/20 shadow-2xl rounded-2xl">
           <AlertDialogHeader><AlertDialogTitle>Delete Material</AlertDialogTitle><AlertDialogDescription>Are you sure? This action cannot be undone.</AlertDialogDescription></AlertDialogHeader>
-          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeleteMaterial} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">Delete</AlertDialogAction></AlertDialogFooter>
+          <AlertDialogFooter><AlertDialogCancel>Cancel</AlertDialogCancel><AlertDialogAction onClick={handleDeleteMaterial} className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl">Delete</AlertDialogAction></AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </div>

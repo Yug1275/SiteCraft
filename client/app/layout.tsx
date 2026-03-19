@@ -15,6 +15,9 @@ const inter = Inter({ subsets: ["latin"] })
 export const metadata: Metadata = {
   title: "SiteCraft - Construction Management Dashboard",
   description: "Unified construction management platform for contractors and civil engineers",
+  icons: {
+    icon: "/favicon.ico",
+  },
 }
 
 export default function RootLayout({
@@ -32,12 +35,12 @@ export default function RootLayout({
             
             <AuthProvider>
               <SidebarProvider>
-                <div className="flex min-h-screen w-full flex-col">
-                  <div className="flex flex-1">
-                    <AppSidebar />
-                    <main className="flex-1 overflow-hidden">{children}</main>
+                <div className="flex min-h-screen w-full">
+                  <AppSidebar />
+                  <div className="flex flex-1 flex-col min-h-screen min-w-0">
+                    <main className="flex-1 overflow-auto">{children}</main>
+                    <Footer />
                   </div>
-                  <Footer />
                 </div>
                 <Toaster richColors position="top-right" />
               </SidebarProvider>

@@ -109,11 +109,11 @@ export default function Dashboard() {
 
   return (
     <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-950 dark:to-slate-900">
-      <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <header className="sticky top-0 z-40 border-b border-white/20 bg-white/10 dark:bg-slate-900/30 backdrop-blur-xl supports-[backdrop-filter]:bg-background/60">
         <div className="flex h-16 items-center gap-4 px-6">
           <SidebarTrigger />
           <div className="flex-1">
-            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-indigo-600 bg-clip-text text-transparent">
               Construction Dashboard
             </h1>
             <p className="text-sm text-muted-foreground">Welcome back, {user?.name}! Here's what's happening on your sites.</p>
@@ -127,7 +127,7 @@ export default function Dashboard() {
           {stats.map((stat, index) => (
             <Card
               key={index}
-              className="relative overflow-hidden border-0 shadow-lg bg-gradient-to-br from-white to-slate-50 dark:from-slate-800 dark:to-slate-900 hover:shadow-xl transition-shadow"
+              className="relative overflow-hidden border border-white/20 backdrop-blur-xl bg-white/60 dark:bg-slate-900/60 shadow-xl hover:shadow-2xl transition-all duration-300 hover:-translate-y-1 rounded-2xl"
             >
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
@@ -149,7 +149,7 @@ export default function Dashboard() {
 
         <div className="grid gap-6 lg:grid-cols-3">
           {/* Recent Projects */}
-          <Card className="lg:col-span-2 border-0 shadow-lg">
+          <Card className="lg:col-span-2 border border-white/20 backdrop-blur-xl bg-white/60 dark:bg-slate-900/60 shadow-xl rounded-2xl transition-all duration-300">
             <CardHeader>
               <div className="flex items-center justify-between">
                 <div>
@@ -187,7 +187,7 @@ export default function Dashboard() {
                 recentProjects.map((project) => (
                   <div
                     key={project.id}
-                    className="p-4 rounded-xl border bg-gradient-to-r from-slate-50 to-white dark:from-slate-800 dark:to-slate-900 hover:shadow-md transition-shadow"
+                    className="p-4 rounded-xl border border-white/20 bg-white/40 dark:bg-slate-800/40 backdrop-blur-sm hover:shadow-lg transition-all duration-300 hover:bg-white/60 dark:hover:bg-slate-800/60"
                   >
                     <div className="flex items-center justify-between mb-2">
                       <h4 className="font-semibold">{project.name}</h4>
@@ -224,7 +224,7 @@ export default function Dashboard() {
           </Card>
 
           {/* Low Stock Alerts */}
-          <Card className="border-0 shadow-lg">
+          <Card className="border border-white/20 backdrop-blur-xl bg-white/60 dark:bg-slate-900/60 shadow-xl rounded-2xl transition-all duration-300">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
                 <AlertTriangle className="h-5 w-5" />
@@ -274,7 +274,7 @@ export default function Dashboard() {
         </div>
 
         {/* Quick Actions */}
-        <Card className="border-0 shadow-lg">
+        <Card className="border border-white/20 backdrop-blur-xl bg-white/60 dark:bg-slate-900/60 shadow-xl rounded-2xl transition-all duration-300">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
             <CardDescription>Frequently used actions for daily operations</CardDescription>
@@ -283,7 +283,7 @@ export default function Dashboard() {
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
               <Button
                 asChild
-                className="h-20 flex-col gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 rounded-xl"
+                className="h-20 flex-col gap-2 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-white shadow-lg rounded-xl transition-all duration-300 hover:shadow-xl hover:-translate-y-1"
               >
                 <Link href="/projects">
                   <Building2 className="h-6 w-6" />
