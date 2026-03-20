@@ -5,13 +5,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Separator } from "@/components/ui/separator"
 import { HardHat, Mail, Lock, Loader2, Eye, EyeOff } from "lucide-react"
 import Link from "next/link"
 import { useAuth } from "@/contexts/AuthContext"
 import { toast } from "sonner"
-import { GoogleLogin } from "@react-oauth/google"
-import { jwtDecode } from "jwt-decode"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
@@ -19,7 +16,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
 
-  const { login, googleLogin } = useAuth()
+  const { login } = useAuth()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -36,23 +33,6 @@ export default function LoginPage() {
       toast.error(error.message || "Login failed")
     } finally {
       setLoading(false)
-    }
-  }
-
-  const handleGoogleSuccess = async (credentialResponse: any) => {
-    try {
-      const decoded: any = jwtDecode(credentialResponse.credential)
-
-      await googleLogin({
-        email: decoded.email,
-        name: decoded.name,
-        avatar_url: decoded.picture,
-        token: credentialResponse.credential,
-      })
-
-      toast.success("Logged in with Google!")
-    } catch (error: any) {
-      toast.error("Google login failed")
     }
   }
 
@@ -77,8 +57,8 @@ export default function LoginPage() {
           </CardDescription>
         </CardHeader>
 
-        <CardContent className="space-y-4">
-          <form onSubmit={handleSubmit} className="space-y-4">
+        <CardContent className="space-y-6 flex flex-col items-center pb-8 pt-4">
+          <form onSubmit={handleSubmit} className="space-y-4 w-full">
             {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
@@ -126,43 +106,23 @@ export default function LoginPage() {
 
             {/* Submit */}
             <Button
-              type="submit"
-              className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600"
-              disabled={loading}
-            >
-              {loading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Signing in...
-                </>
-              ) : (
-                "Sign in"
-              )}
-            </Button>
+               type="submit"
+               className="w-full h-11 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 shadow-md shadow-blue-500/20"
+               disabled={loading}
+             >
+               {loading ? (
+                 <>
+                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                   Signing in...
+                 </>
+               ) : (
+                 "Sign in"
+               )}
+             </Button>
           </form>
 
-          {/* Divider */}
-          <div className="relative">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-white dark:bg-slate-900 px-2 text-muted-foreground">
-                Or
-              </span>
-            </div>
-          </div>
-
-          {/* Google Login */}
-          <div className="flex justify-center">
-            <GoogleLogin
-              onSuccess={handleGoogleSuccess}
-              onError={() => toast.error("Google Login Failed")}
-            />
-          </div>
-
           {/* Signup */}
-          <p className="text-center text-sm text-muted-foreground">
+          <p className="text-center text-sm text-muted-foreground mt-4">
             Don&apos;t have an account?{" "}
             <Link
               href="/signup"

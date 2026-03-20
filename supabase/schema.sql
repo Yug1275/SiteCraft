@@ -152,6 +152,27 @@ CREATE POLICY "Service role has full access to documents" ON documents
   FOR ALL USING (true) WITH CHECK (true);
 
 -- =============================================
+-- CONTACT MESSAGES TABLE
+-- =============================================
+CREATE TABLE IF NOT EXISTS contact_messages (
+  id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL,
+  message TEXT NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+CREATE INDEX idx_contact_messages_created_at ON contact_messages(created_at);
+CREATE INDEX idx_contact_messages_email ON contact_messages(email);
+
+-- Enable RLS on contact_messages
+ALTER TABLE contact_messages ENABLE ROW LEVEL SECURITY;
+
+-- Allow service role full access to contact_messages
+CREATE POLICY "Service role has full access to contact_messages" ON contact_messages
+  FOR ALL USING (true) WITH CHECK (true);
+
+-- =============================================
 -- SUPABASE STORAGE BUCKET
 -- =============================================
 -- Create a storage bucket for documents

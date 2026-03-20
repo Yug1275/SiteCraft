@@ -1,9 +1,9 @@
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { supabase } from '../config/supabase';
-import { AuthRequest } from '../middleware/auth';
 import multer from 'multer';
 import path from 'path';
 import fs from 'fs';
+import { ensureUserExists } from '../utils/ensureUser';
 
 const uploadDir = path.join(__dirname, '../../uploads');
 if (!fs.existsSync(uploadDir)) {
@@ -16,9 +16,8 @@ const storage = multer.diskStorage({
     cb(null, uploadDir);
   },
   filename: (req, file, cb) => {
-    const authReq = req as AuthRequest;
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, (authReq.user?.id || 'anon') + '-' + uniqueSuffix + path.extname(file.originalname));
+    cb(null, 'anon-' + uniqueSuffix + path.extname(file.originalname));
   }
 });
 export const upload = multer({
@@ -35,13 +34,12 @@ export const upload = multer({
   },
 });
 
-export const getDocuments = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getDocuments = async (req: Request, res: Response): Promise<void> => {
   try {
     const { project_id } = req.query;
     let query = supabase
       .from('documents')
       .select('*')
-      .eq('user_id', req.user!.id)
       .order('uploaded_at', { ascending: false });
 
     if (project_id) {
@@ -62,20 +60,22 @@ export const getDocuments = async (req: AuthRequest, res: Response): Promise<voi
   }
 };
 
-export const uploadDocument = async (req: AuthRequest, res: Response): Promise<void> => {
+export const uploadDocument = async (req: Request, res: Response): Promise<void> => {
   try {
     const file = req.file;
-    const { name, category, project_id } = req.body;
+    const { name, category, project_id, user_id, user_email, user_name } = req.body;
 
     if (!file) {
       res.status(400).json({ error: 'No file uploaded' });
       return;
     }
 
-    if (!name) {
-      res.status(400).json({ error: 'Document name is required' });
+    if (!name || !user_id) {
+      res.status(400).json({ error: 'Document name and user_id are required' });
       return;
     }
+
+    const resolvedUserId = await ensureUserExists({ userId: user_id, email: user_email, name: user_name });
 
     // Get public URL
     const publicUrl = `${process.env.API_URL || 'http://localhost:5000'}/uploads/${file.filename}`;
@@ -97,13 +97,14 @@ export const uploadDocument = async (req: AuthRequest, res: Response): Promise<v
         file_type: fileType,
         category: category || 'General',
         project_id: project_id || null,
-        user_id: req.user!.id,
+        user_id: resolvedUserId,
       })
       .select()
       .single();
 
     if (error) {
-      res.status(500).json({ error: 'Failed to save document metadata' });
+      console.error('Upload document supabase error:', error);
+      res.status(500).json({ error: error.message || 'Failed to save document metadata' });
       return;
     }
 
@@ -114,7 +115,7 @@ export const uploadDocument = async (req: AuthRequest, res: Response): Promise<v
   }
 };
 
-export const deleteDocument = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteDocument = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
@@ -123,7 +124,6 @@ export const deleteDocument = async (req: AuthRequest, res: Response): Promise<v
       .from('documents')
       .select('file_url')
       .eq('id', id)
-      .eq('user_id', req.user!.id)
       .single();
 
     if (doc?.file_url) {
@@ -140,8 +140,7 @@ export const deleteDocument = async (req: AuthRequest, res: Response): Promise<v
     const { error } = await supabase
       .from('documents')
       .delete()
-      .eq('id', id)
-      .eq('user_id', req.user!.id);
+      .eq('id', id);
 
     if (error) {
       res.status(500).json({ error: 'Failed to delete document' });

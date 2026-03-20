@@ -12,24 +12,14 @@ class ApiClient {
     this.baseUrl = baseUrl;
   }
 
-  private getToken(): string | null {
-    if (typeof window === 'undefined') return null;
-    return localStorage.getItem('sitecraft-token');
-  }
-
   private async request<T>(
     endpoint: string,
     method: string,
     options?: ApiOptions
   ): Promise<T> {
-    const token = this.getToken();
     const headers: Record<string, string> = {
       ...options?.headers,
     };
-
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
 
     const isFormData = options?.body instanceof FormData;
     if (!isFormData) {

@@ -1,14 +1,13 @@
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { supabase } from '../config/supabase';
-import { AuthRequest } from '../middleware/auth';
+import { ensureUserExists } from '../utils/ensureUser';
 
-export const getMaterials = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getMaterials = async (req: Request, res: Response): Promise<void> => {
   try {
     const { project_id } = req.query;
-    let query = supabase
+      let query = supabase
       .from('materials')
       .select('*')
-      .eq('user_id', req.user!.id)
       .order('created_at', { ascending: false });
 
     if (project_id) {
@@ -29,14 +28,16 @@ export const getMaterials = async (req: AuthRequest, res: Response): Promise<voi
   }
 };
 
-export const createMaterial = async (req: AuthRequest, res: Response): Promise<void> => {
+export const createMaterial = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, category, current_stock, minimum_stock, unit, unit_price, supplier, project_id } = req.body;
+    const { name, category, current_stock, minimum_stock, unit, unit_price, supplier, project_id, user_id, user_email, user_name } = req.body;
 
-    if (!name || !unit) {
-      res.status(400).json({ error: 'Name and unit are required' });
+    if (!name || !unit || !user_id) {
+      res.status(400).json({ error: 'Name, unit and user_id are required' });
       return;
     }
+
+    const resolvedUserId = await ensureUserExists({ userId: user_id, email: user_email, name: user_name });
 
     const { data, error } = await supabase
       .from('materials')
@@ -49,13 +50,14 @@ export const createMaterial = async (req: AuthRequest, res: Response): Promise<v
         unit_price: unit_price || 0,
         supplier: supplier || '',
         project_id: project_id || null,
-        user_id: req.user!.id,
+        user_id: resolvedUserId,
       })
       .select()
       .single();
 
     if (error) {
-      res.status(500).json({ error: 'Failed to create material' });
+      console.error('Create material supabase error:', error);
+      res.status(500).json({ error: error.message || 'Failed to create material' });
       return;
     }
 
@@ -66,7 +68,7 @@ export const createMaterial = async (req: AuthRequest, res: Response): Promise<v
   }
 };
 
-export const updateMaterial = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateMaterial = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -75,7 +77,6 @@ export const updateMaterial = async (req: AuthRequest, res: Response): Promise<v
       .from('materials')
       .update(updates)
       .eq('id', id)
-      .eq('user_id', req.user!.id)
       .select()
       .single();
 
@@ -96,15 +97,14 @@ export const updateMaterial = async (req: AuthRequest, res: Response): Promise<v
   }
 };
 
-export const deleteMaterial = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteMaterial = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
     const { error } = await supabase
       .from('materials')
       .delete()
-      .eq('id', id)
-      .eq('user_id', req.user!.id);
+      .eq('id', id);
 
     if (error) {
       res.status(500).json({ error: 'Failed to delete material' });

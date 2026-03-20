@@ -1,15 +1,15 @@
 "use client"
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react'
-import { api } from '@/lib/api'
 import { useRouter } from 'next/navigation'
+import { supabase } from '@/lib/supabaseClient'
 
 interface User {
   id: string
   name: string
   email: string
   avatar_url?: string
-  created_at: string
+  created_at?: string
 }
 
 interface AuthContextType {
@@ -18,8 +18,7 @@ interface AuthContextType {
   isAuthenticated: boolean
   login: (email: string, password: string) => Promise<void>
   signup: (name: string, email: string, password: string) => Promise<void>
-  googleLogin: (data: { email: string; name: string; avatar_url?: string; token?: string }) => Promise<void>
-  logout: () => void
+  logout: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -29,60 +28,82 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
   const router = useRouter()
 
-  const checkAuth = useCallback(async () => {
-    try {
-      const token = localStorage.getItem('sitecraft-token')
-      if (!token) {
+  useEffect(() => {
+    // Check active sessions and sets the user
+    const checkUser = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        if (session?.user) {
+          setUser({
+            id: session.user.id,
+            email: session.user.email || '',
+            name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+            avatar_url: session.user.user_metadata?.avatar_url,
+          })
+        } else {
+          setUser(null)
+        }
+      } catch (error) {
+        console.error('Error checking auth session:', error)
+      } finally {
         setLoading(false)
-        return
       }
-
-      const data = await api.get<{ user: User }>('/auth/me')
-      setUser(data.user)
-    } catch (error) {
-      localStorage.removeItem('sitecraft-token')
-      setUser(null)
-    } finally {
-      setLoading(false)
     }
+
+    checkUser()
+
+    // Listen for changes on auth state (logged in, signed out, etc.)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session?.user) {
+        setUser({
+          id: session.user.id,
+          email: session.user.email || '',
+          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'User',
+          avatar_url: session.user.user_metadata?.avatar_url,
+        })
+      } else {
+        setUser(null)
+      }
+      setLoading(false)
+    })
+
+    return () => subscription.unsubscribe()
   }, [])
 
-  useEffect(() => {
-    checkAuth()
-  }, [checkAuth])
-
   const login = async (email: string, password: string) => {
-    const data = await api.post<{ token: string; user: User }>('/auth/login', {
+    const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
-    localStorage.setItem('sitecraft-token', data.token)
-    setUser(data.user)
-    router.push('/')
+    
+    if (error) {
+      throw error
+    }
+    router.push('/dashboard')
   }
 
   const signup = async (name: string, email: string, password: string) => {
-    const data = await api.post<{ token: string; user: User }>('/auth/signup', {
-      name,
+    const { error } = await supabase.auth.signUp({
       email,
       password,
+      options: {
+        data: {
+          full_name: name,
+        }
+      }
     })
-    localStorage.setItem('sitecraft-token', data.token)
-    setUser(data.user)
-    router.push('/')
+
+    if (error) {
+      throw error
+    }
+    router.push('/dashboard')
   }
 
-  const googleLogin = async (googleData: { email: string; name: string; avatar_url?: string; token?: string }) => {
-    const data = await api.post<{ token: string; user: User }>('/auth/google', googleData)
-    localStorage.setItem('sitecraft-token', data.token)
-    setUser(data.user)
-    router.push('/')
-  }
-
-  const logout = () => {
-    localStorage.removeItem('sitecraft-token')
+  const logout = async () => {
+    await supabase.auth.signOut()
     setUser(null)
-    router.push('/login')
+    router.push('/')
   }
 
   return (
@@ -93,7 +114,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: !!user,
         login,
         signup,
-        googleLogin,
         logout,
       }}
     >

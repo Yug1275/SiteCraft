@@ -1,14 +1,13 @@
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { supabase } from '../config/supabase';
-import { AuthRequest } from '../middleware/auth';
+import { ensureUserExists } from '../utils/ensureUser';
 
-export const getLabor = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getLabor = async (req: Request, res: Response): Promise<void> => {
   try {
     const { project_id } = req.query;
-    let query = supabase
+      let query = supabase
       .from('labor')
       .select('*')
-      .eq('user_id', req.user!.id)
       .order('created_at', { ascending: false });
 
     if (project_id) {
@@ -29,14 +28,16 @@ export const getLabor = async (req: AuthRequest, res: Response): Promise<void> =
   }
 };
 
-export const createLabor = async (req: AuthRequest, res: Response): Promise<void> => {
+export const createLabor = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, phone, role, hourly_rate, daily_wage, project_id } = req.body;
+    const { name, phone, role, hourly_rate, daily_wage, project_id, user_id, user_email, user_name } = req.body;
 
-    if (!name || !role) {
-      res.status(400).json({ error: 'Name and role are required' });
+    if (!name || !role || !user_id) {
+      res.status(400).json({ error: 'Name, role and user_id are required' });
       return;
     }
+
+    const resolvedUserId = await ensureUserExists({ userId: user_id, email: user_email, name: user_name });
 
     const { data, error } = await supabase
       .from('labor')
@@ -47,7 +48,7 @@ export const createLabor = async (req: AuthRequest, res: Response): Promise<void
         hourly_rate: hourly_rate || 0,
         daily_wage: daily_wage || (hourly_rate ? hourly_rate * 8 : 0),
         project_id: project_id || null,
-        user_id: req.user!.id,
+        user_id: resolvedUserId,
         is_present: false,
         check_in_time: null,
         check_out_time: null,
@@ -56,7 +57,8 @@ export const createLabor = async (req: AuthRequest, res: Response): Promise<void
       .single();
 
     if (error) {
-      res.status(500).json({ error: 'Failed to add worker' });
+      console.error('Create labor supabase error:', error);
+      res.status(500).json({ error: error.message || 'Failed to add worker' });
       return;
     }
 
@@ -67,7 +69,7 @@ export const createLabor = async (req: AuthRequest, res: Response): Promise<void
   }
 };
 
-export const updateLabor = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateLabor = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -76,7 +78,6 @@ export const updateLabor = async (req: AuthRequest, res: Response): Promise<void
       .from('labor')
       .update(updates)
       .eq('id', id)
-      .eq('user_id', req.user!.id)
       .select()
       .single();
 
@@ -97,15 +98,14 @@ export const updateLabor = async (req: AuthRequest, res: Response): Promise<void
   }
 };
 
-export const deleteLabor = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteLabor = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
     const { error } = await supabase
       .from('labor')
       .delete()
-      .eq('id', id)
-      .eq('user_id', req.user!.id);
+      .eq('id', id);
 
     if (error) {
       res.status(500).json({ error: 'Failed to remove worker' });

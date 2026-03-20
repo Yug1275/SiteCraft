@@ -5,12 +5,12 @@ import morgan from 'morgan';
 import dotenv from 'dotenv';
 import path from 'path';
 
-import authRoutes from './routes/auth';
 import projectRoutes from './routes/projects';
 import materialRoutes from './routes/materials';
 import laborRoutes from './routes/labor';
 import taskRoutes from './routes/tasks';
 import documentRoutes from './routes/documents';
+import contactRoutes from './routes/contact';
 
 dotenv.config();
 
@@ -36,12 +36,12 @@ app.get('/api/health', (_req, res) => {
 });
 
 // Routes
-app.use('/api/auth', authRoutes);
 app.use('/api/projects', projectRoutes);
 app.use('/api/materials', materialRoutes);
 app.use('/api/labor', laborRoutes);
 app.use('/api/tasks', taskRoutes);
 app.use('/api/documents', documentRoutes);
+app.use('/api/contact', contactRoutes);
 
 // Global error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {

@@ -1,14 +1,13 @@
-import { Response } from 'express';
+import { Response, Request } from 'express';
 import { supabase } from '../config/supabase';
-import { AuthRequest } from '../middleware/auth';
+import { ensureUserExists } from '../utils/ensureUser';
 
-export const getTasks = async (req: AuthRequest, res: Response): Promise<void> => {
+export const getTasks = async (req: Request, res: Response): Promise<void> => {
   try {
     const { project_id, status } = req.query;
-    let query = supabase
+      let query = supabase
       .from('tasks')
       .select('*')
-      .eq('user_id', req.user!.id)
       .order('created_at', { ascending: false });
 
     if (project_id) {
@@ -32,14 +31,16 @@ export const getTasks = async (req: AuthRequest, res: Response): Promise<void> =
   }
 };
 
-export const createTask = async (req: AuthRequest, res: Response): Promise<void> => {
+export const createTask = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { title, description, status: taskStatus, priority, assignee, due_date, project_id } = req.body;
+    const { title, description, status: taskStatus, priority, assignee, due_date, project_id, user_id, user_email, user_name } = req.body;
 
-    if (!title) {
-      res.status(400).json({ error: 'Title is required' });
+    if (!title || !user_id) {
+      res.status(400).json({ error: 'Title and user_id are required' });
       return;
     }
+
+    const resolvedUserId = await ensureUserExists({ userId: user_id, email: user_email, name: user_name });
 
     const { data, error } = await supabase
       .from('tasks')
@@ -52,13 +53,14 @@ export const createTask = async (req: AuthRequest, res: Response): Promise<void>
         due_date: due_date || null,
         progress: 0,
         project_id: project_id || null,
-        user_id: req.user!.id,
+        user_id: resolvedUserId,
       })
       .select()
       .single();
 
     if (error) {
-      res.status(500).json({ error: 'Failed to create task' });
+      console.error('Create task supabase error:', error);
+      res.status(500).json({ error: error.message || 'Failed to create task' });
       return;
     }
 
@@ -69,7 +71,7 @@ export const createTask = async (req: AuthRequest, res: Response): Promise<void>
   }
 };
 
-export const updateTask = async (req: AuthRequest, res: Response): Promise<void> => {
+export const updateTask = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
     const updates = req.body;
@@ -85,7 +87,6 @@ export const updateTask = async (req: AuthRequest, res: Response): Promise<void>
       .from('tasks')
       .update(updates)
       .eq('id', id)
-      .eq('user_id', req.user!.id)
       .select()
       .single();
 
@@ -106,15 +107,14 @@ export const updateTask = async (req: AuthRequest, res: Response): Promise<void>
   }
 };
 
-export const deleteTask = async (req: AuthRequest, res: Response): Promise<void> => {
+export const deleteTask = async (req: Request, res: Response): Promise<void> => {
   try {
     const { id } = req.params;
 
     const { error } = await supabase
       .from('tasks')
       .delete()
-      .eq('id', id)
-      .eq('user_id', req.user!.id);
+      .eq('id', id);
 
     if (error) {
       res.status(500).json({ error: 'Failed to delete task' });

@@ -84,7 +84,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   }
 
   return (
-    <Sidebar collapsible="icon" className="border-r border-white/20 bg-white/10 dark:bg-slate-900/30 backdrop-blur-xl shadow-xl transition-all duration-300 flex flex-col h-screen h-[100dvh]" {...props}>
+    <Sidebar collapsible="icon" className="border-r border-white/20 bg-white/10 dark:bg-slate-900/30 backdrop-blur-xl shadow-xl transition-all duration-300 flex flex-col h-[100dvh]" {...props}>
       <SidebarHeader>
         <SidebarMenu>
           <SidebarMenuItem>

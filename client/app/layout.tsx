@@ -3,12 +3,8 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
-import { SidebarProvider } from "@/components/ui/sidebar"
-import { AppSidebar } from "@/components/app-sidebar"
 import { Toaster } from "@/components/ui/sonner"
-import { Footer } from "@/components/footer"
 import { AuthProvider } from "@/contexts/AuthContext"
-import { GoogleOAuthProvider } from '@react-oauth/google'
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -29,25 +25,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-
-          {/* 🔥 ADD THIS */}
-          <GoogleOAuthProvider clientId={process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!}>
-            
-            <AuthProvider>
-              <SidebarProvider>
-                <div className="flex min-h-screen w-full">
-                  <AppSidebar />
-                  <div className="flex flex-1 flex-col min-h-screen min-w-0">
-                    <main className="flex-1 overflow-auto">{children}</main>
-                    <Footer />
-                  </div>
-                </div>
-                <Toaster richColors position="top-right" />
-              </SidebarProvider>
-            </AuthProvider>
-
-          </GoogleOAuthProvider>
-
+          <AuthProvider>
+            <div className="flex min-h-screen w-full flex-col">
+              <main className="flex-1">{children}</main>
+            </div>
+            <Toaster richColors position="top-right" />
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>
