@@ -17,25 +17,32 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware
+// ✅ Middleware
 app.use(helmet());
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:3000',
+  origin: process.env.CLIENT_URL || '*', // allow netlify + local
   credentials: true,
 }));
+
 app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Serve uploaded files statically from the same folder used by document uploads.
+// ✅ Serve uploaded files
 app.use('/uploads', express.static(path.join(__dirname, '../uploads')));
 
-// Health check
+// ✅ ROOT ROUTE (VERY IMPORTANT FOR RENDER)
+app.get('/', (_req, res) => {
+  res.send('🚀 SiteCraft API is running successfully');
+});
+
+// ✅ Health check
 app.get('/api/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Routes
+// ✅ API Routes
 app.use('/api/projects', projectRoutes);
 app.use('/api/materials', materialRoutes);
 app.use('/api/labor', laborRoutes);
@@ -43,7 +50,12 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/documents', documentRoutes);
 app.use('/api/contact', contactRoutes);
 
-// Global error handler
+// ❌ 404 handler (IMPORTANT)
+app.use((_req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
+
+// ❌ Global error handler
 app.use((err: any, _req: express.Request, res: express.Response, _next: express.NextFunction) => {
   console.error('Unhandled error:', err);
   res.status(err.status || 500).json({
@@ -51,6 +63,7 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
   });
 });
 
+// ✅ Start server
 app.listen(PORT, () => {
   console.log(`🚀 SiteCraft API server running on port ${PORT}`);
 });
