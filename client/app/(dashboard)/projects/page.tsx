@@ -38,8 +38,16 @@ export default function ProjectsPage() {
   const [loading, setLoading] = useState(true)
 
   const [formData, setFormData] = useState({
-    name: "", location: "", description: "", budget: "", start_date: "", end_date: "", manager: "",
+    name: "", location: "", description: "", budget: "", start_date: "", end_date: "", manager: "", progress: "0",
   })
+
+  const formatInrCompact = (value: number) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(value || 0)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push('/login')
@@ -77,7 +85,7 @@ export default function ProjectsPage() {
   }
 
   const resetForm = () => {
-    setFormData({ name: "", location: "", description: "", budget: "", start_date: "", end_date: "", manager: "" })
+    setFormData({ name: "", location: "", description: "", budget: "", start_date: "", end_date: "", manager: "", progress: "0" })
   }
 
   const handleCreateProject = async () => {
@@ -89,6 +97,7 @@ export default function ProjectsPage() {
       await api.post('/projects', {
         ...formData,
         budget: formData.budget ? parseFloat(formData.budget) : 0,
+        progress: Math.max(0, Math.min(100, parseInt(formData.progress || "0", 10) || 0)),
         user_id: user?.id,
         user_email: user?.email,
         user_name: user?.name,
@@ -112,6 +121,7 @@ export default function ProjectsPage() {
       start_date: project.start_date || "",
       end_date: project.end_date || "",
       manager: project.manager || "",
+      progress: (project.progress ?? 0).toString(),
     })
     setEditDialogOpen(true)
   }
@@ -125,6 +135,7 @@ export default function ProjectsPage() {
       await api.put(`/projects/${editingProject.id}`, {
         ...formData,
         budget: formData.budget ? parseFloat(formData.budget) : 0,
+        progress: Math.max(0, Math.min(100, parseInt(formData.progress || "0", 10) || 0)),
       })
       toast.success("Project updated successfully")
       resetForm()
@@ -183,7 +194,7 @@ export default function ProjectsPage() {
                 <Plus className="h-4 w-4 mr-2" /> New Project
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-white/20 shadow-2xl rounded-2xl">
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-white/20 shadow-2xl rounded-2xl">
               <DialogHeader>
                 <DialogTitle>Create New Project</DialogTitle>
                 <DialogDescription>Add a new construction project to your portfolio</DialogDescription>
@@ -199,7 +210,7 @@ export default function ProjectsPage() {
           </Dialog>
 
           <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-            <DialogContent className="max-w-2xl backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-white/20 shadow-2xl rounded-2xl">
+            <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto backdrop-blur-xl bg-white/80 dark:bg-slate-900/80 border border-white/20 shadow-2xl rounded-2xl">
               <DialogHeader>
                 <DialogTitle>Edit Project</DialogTitle>
                 <DialogDescription>Update project information</DialogDescription>
@@ -253,8 +264,8 @@ export default function ProjectsPage() {
                     <Progress value={project.progress} className="h-2" />
                   </div>
                   <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center gap-2"><DollarSign className="h-4 w-4 text-green-600" /><span>${((project.budget || 0) / 1000000).toFixed(1)}M</span></div>
-                    <div className="flex items-center gap-2"><Calendar className="h-4 w-4 text-purple-600" /><span>{project.start_date ? new Date(project.start_date).toLocaleDateString() : "TBD"}</span></div>
+                    <div className="flex items-center gap-2"><DollarSign className="h-4 w-4 text-green-600" /><span>{formatInrCompact(project.budget || 0)}</span></div>
+                    <div className="flex items-center gap-2"><Calendar className="h-4 w-4 text-purple-600" /><span>{project.start_date ? new Date(project.start_date).toLocaleDateString("en-IN") : "TBD"}</span></div>
                   </div>
                   {project.manager && <div className="text-sm"><span className="font-medium">Manager: </span><span className="text-muted-foreground">{project.manager}</span></div>}
                   <div className="flex gap-2 pt-2">
@@ -312,7 +323,7 @@ const ProjectForm = ({ formData, setFormData, onSubmit, onCancel, submitLabel }:
     </div>
     <div className="grid grid-cols-3 gap-4">
       <div className="space-y-2">
-        <Label>Budget ($)</Label>
+        <Label>Budget (₹)</Label>
         <Input type="number" placeholder="0" value={formData.budget} onChange={(e) => setFormData({ ...formData, budget: e.target.value })} className="bg-white/50 dark:bg-slate-950/50" />
       </div>
       <div className="space-y-2">
@@ -323,6 +334,18 @@ const ProjectForm = ({ formData, setFormData, onSubmit, onCancel, submitLabel }:
         <Label>End Date</Label>
         <Input type="date" value={formData.end_date} onChange={(e) => setFormData({ ...formData, end_date: e.target.value })} className="bg-white/50 dark:bg-slate-950/50" />
       </div>
+    </div>
+    <div className="space-y-2">
+      <Label>Progress (%)</Label>
+      <Input
+        type="number"
+        min="0"
+        max="100"
+        placeholder="0"
+        value={formData.progress}
+        onChange={(e) => setFormData({ ...formData, progress: e.target.value })}
+        className="bg-white/50 dark:bg-slate-950/50"
+      />
     </div>
     <div className="space-y-2">
       <Label>Project Manager</Label>

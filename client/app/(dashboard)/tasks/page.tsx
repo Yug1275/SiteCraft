@@ -200,7 +200,7 @@ export default function TasksPage() {
                       <div className="space-y-2"><div className="flex justify-between text-sm"><span>Progress</span><span>{task.progress || 0}%</span></div><Progress value={task.progress || 0} className="h-2" /></div>
                       <div className="grid grid-cols-2 gap-2 text-sm">
                         {task.assignee && <div className="flex items-center gap-1 text-muted-foreground"><span className="font-medium">{task.assignee}</span></div>}
-                        {task.due_date && <div className="flex items-center gap-1 text-muted-foreground"><Calendar className="h-3 w-3" />{new Date(task.due_date).toLocaleDateString()}</div>}
+                        {task.due_date && <div className="flex items-center gap-1 text-muted-foreground"><Calendar className="h-3 w-3" />{new Date(task.due_date).toLocaleDateString("en-IN")}</div>}
                       </div>
                       <div className="flex gap-1">
                         <Select value={task.status} onValueChange={(v) => handleStatusChange(task, v)}>

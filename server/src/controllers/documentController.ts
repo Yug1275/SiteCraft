@@ -10,16 +10,24 @@ if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-// Configure multer for disk storage
-const storage = multer.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, uploadDir);
-  },
-  filename: (req, file, cb) => {
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, 'anon-' + uniqueSuffix + path.extname(file.originalname));
-  }
-});
+const DOCUMENTS_BUCKET = process.env.SUPABASE_STORAGE_BUCKET || 'documents';
+
+const getStoragePathFromPublicUrl = (fileUrl: string) => {
+  const marker = `/storage/v1/object/public/${DOCUMENTS_BUCKET}/`;
+  const idx = fileUrl.indexOf(marker);
+  if (idx === -1) return null;
+  return decodeURIComponent(fileUrl.slice(idx + marker.length));
+};
+
+const getLegacyUploadFilename = (fileUrl: string) => {
+  const marker = '/uploads/';
+  const idx = fileUrl.indexOf(marker);
+  if (idx === -1) return null;
+  return decodeURIComponent(fileUrl.slice(idx + marker.length));
+};
+
+// Configure multer for memory storage before uploading to Supabase Storage.
+const storage = multer.memoryStorage();
 export const upload = multer({
   storage,
   limits: { fileSize: 10 * 1024 * 1024 }, // 10MB limit
@@ -77,15 +85,37 @@ export const uploadDocument = async (req: Request, res: Response): Promise<void>
 
     const resolvedUserId = await ensureUserExists({ userId: user_id, email: user_email, name: user_name });
 
-    // Get public URL
-    const publicUrl = `${process.env.API_URL || 'http://localhost:5000'}/uploads/${file.filename}`;
+    const uniqueSuffix = `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+    const ext = path.extname(file.originalname).toLowerCase();
+    const storagePath = `${resolvedUserId}/${uniqueSuffix}${ext}`;
+
+    const { error: storageError } = await supabase
+      .storage
+      .from(DOCUMENTS_BUCKET)
+      .upload(storagePath, file.buffer, {
+        contentType: file.mimetype,
+        upsert: false,
+      });
+
+    if (storageError) {
+      console.error('Supabase storage upload error:', storageError);
+      res.status(500).json({ error: storageError.message || 'Failed to upload file to storage' });
+      return;
+    }
+
+    const { data: publicUrlData } = supabase
+      .storage
+      .from(DOCUMENTS_BUCKET)
+      .getPublicUrl(storagePath);
+
+    const publicUrl = publicUrlData.publicUrl;
 
     // Save document metadata
-    const ext = path.extname(file.originalname).toLowerCase().replace('.', '');
+    const fileExt = ext.replace('.', '');
     let fileType = 'document';
-    if (['jpg', 'jpeg', 'png', 'gif'].includes(ext)) fileType = 'image';
-    else if (['xls', 'xlsx', 'csv'].includes(ext)) fileType = 'spreadsheet';
-    else if (ext === 'pdf') fileType = 'pdf';
+    if (['jpg', 'jpeg', 'png', 'gif'].includes(fileExt)) fileType = 'image';
+    else if (['xls', 'xlsx', 'csv'].includes(fileExt)) fileType = 'spreadsheet';
+    else if (fileExt === 'pdf') fileType = 'pdf';
 
     const { data, error } = await supabase
       .from('documents')
@@ -127,12 +157,24 @@ export const deleteDocument = async (req: Request, res: Response): Promise<void>
       .single();
 
     if (doc?.file_url) {
-      // Extract file path from URL for deletion
-      const filename = doc.file_url.split('/uploads/')[1];
-      if (filename) {
-        const filePath = path.join(__dirname, '../../uploads', filename);
-        if (fs.existsSync(filePath)) {
-          fs.unlinkSync(filePath);
+      const storagePath = getStoragePathFromPublicUrl(doc.file_url);
+      if (storagePath) {
+        const { error: removeError } = await supabase
+          .storage
+          .from(DOCUMENTS_BUCKET)
+          .remove([storagePath]);
+
+        if (removeError) {
+          console.error('Supabase storage remove error:', removeError);
+        }
+      } else {
+        // Backward compatibility for older local /uploads files.
+        const filename = getLegacyUploadFilename(doc.file_url);
+        if (filename) {
+          const filePath = path.join(__dirname, '../../uploads', filename);
+          if (fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+          }
         }
       }
     }

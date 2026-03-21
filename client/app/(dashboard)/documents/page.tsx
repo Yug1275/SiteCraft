@@ -40,6 +40,26 @@ export default function DocumentsPage() {
 
   const [formData, setFormData] = useState({ name: "", category: "General", project_id: "" })
   const categories = ["all", "General", "Permits", "Blueprints", "Contracts", "Reports", "Invoices"]
+  const apiOrigin = (process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000/api").replace(/\/api\/?$/, "")
+
+  const resolveDownloadUrl = (fileUrl?: string) => {
+    if (!fileUrl) return ""
+
+    // Legacy local-upload records need API host rewrite.
+    const marker = "/uploads/"
+    const markerIndex = fileUrl.indexOf(marker)
+    if (markerIndex !== -1) {
+      const filename = fileUrl.slice(markerIndex + marker.length)
+      return `${apiOrigin}/uploads/${filename}`
+    }
+
+    // For Supabase Storage public URLs (and other absolute URLs), use as-is.
+    if (/^https?:\/\//i.test(fileUrl)) {
+      return fileUrl
+    }
+
+    return fileUrl
+  }
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) router.push('/login')
@@ -210,12 +230,34 @@ export default function DocumentsPage() {
                         <Badge variant="outline" className="text-xs">{doc.category}</Badge>
                         <span className="text-xs text-muted-foreground">{doc.file_size}</span>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">{new Date(doc.uploaded_at).toLocaleDateString()}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{new Date(doc.uploaded_at).toLocaleDateString("en-IN")}</p>
                     </div>
-                    <div className="flex flex-col gap-1">
-                      {doc.file_url && <Button variant="ghost" size="sm" asChild><a href={doc.file_url} target="_blank" rel="noopener noreferrer"><Download className="h-4 w-4" /></a></Button>}
-                      <Button variant="ghost" size="sm" onClick={() => setDeleteId(doc.id)}><Trash2 className="h-4 w-4 text-red-500" /></Button>
-                    </div>
+                  </div>
+                  <div className="flex gap-2 pt-3">
+                    {doc.file_url ? (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        asChild
+                        className="flex-1 bg-white/50 dark:bg-slate-800/50 hover:bg-white/80 dark:hover:bg-slate-800/80"
+                      >
+                        <a href={resolveDownloadUrl(doc.file_url)} target="_blank" rel="noopener noreferrer">
+                          <Download className="h-4 w-4 mr-1" />View
+                        </a>
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        disabled
+                        className="flex-1 bg-white/50 dark:bg-slate-800/50"
+                      >
+                        <Download className="h-4 w-4 mr-1" />Download
+                      </Button>
+                    )}
+                    <Button variant="destructive" size="sm" onClick={() => setDeleteId(doc.id)} className="px-3">
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </CardContent>
               </Card>

@@ -21,6 +21,8 @@ import {
 import { toast } from "sonner"
 import { useAuth } from "@/contexts/AuthContext"
 import { useRouter } from "next/navigation"
+import html2canvas from "html2canvas"
+import jsPDF from "jspdf"
 
 export default function ReportsViewerPage() {
   const { loading: authLoading, isAuthenticated } = useAuth()
@@ -29,7 +31,9 @@ export default function ReportsViewerPage() {
   const [parsedData, setParsedData] = useState<any>(null)
   const [error, setError] = useState<string | null>(null)
   const [searchTerm, setSearchTerm] = useState("")
+  const [exportingPdf, setExportingPdf] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const viewerExportRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -90,8 +94,77 @@ export default function ReportsViewerPage() {
     reader.readAsText(file)
   }
 
-  const handlePrint = () => {
-    window.print()
+  const handleExportPdf = async () => {
+    if (!viewerExportRef.current || !parsedData) {
+      toast.error("No viewer content to export")
+      return
+    }
+
+    try {
+      setExportingPdf(true)
+      const exportElement = viewerExportRef.current
+
+      const canvas = await html2canvas(exportElement, {
+        scale: 2,
+        useCORS: true,
+        logging: false,
+        backgroundColor: null,
+        width: exportElement.scrollWidth,
+        height: exportElement.scrollHeight,
+        windowWidth: exportElement.scrollWidth,
+        windowHeight: exportElement.scrollHeight,
+      })
+
+      const pdf = new jsPDF({ unit: "pt", format: "a4", orientation: "portrait" })
+      const pageWidth = pdf.internal.pageSize.getWidth()
+      const pageHeight = pdf.internal.pageSize.getHeight()
+
+      const pxPerPt = canvas.width / pageWidth
+      const pageCanvasHeight = Math.floor(pageHeight * pxPerPt)
+      let renderedHeight = 0
+      let pageIndex = 0
+
+      while (renderedHeight < canvas.height) {
+        const sliceHeight = Math.min(pageCanvasHeight, canvas.height - renderedHeight)
+        const pageCanvas = document.createElement("canvas")
+        pageCanvas.width = canvas.width
+        pageCanvas.height = sliceHeight
+
+        const pageCtx = pageCanvas.getContext("2d")
+        if (!pageCtx) break
+
+        pageCtx.drawImage(
+          canvas,
+          0,
+          renderedHeight,
+          canvas.width,
+          sliceHeight,
+          0,
+          0,
+          canvas.width,
+          sliceHeight,
+        )
+
+        const pageImg = pageCanvas.toDataURL("image/png")
+        const imgHeightOnPdf = (sliceHeight * pageWidth) / canvas.width
+
+        if (pageIndex > 0) {
+          pdf.addPage()
+        }
+        pdf.addImage(pageImg, "PNG", 0, 0, pageWidth, imgHeightOnPdf)
+
+        renderedHeight += sliceHeight
+        pageIndex += 1
+      }
+
+      const fileDate = new Date().toISOString().split("T")[0]
+      pdf.save(`viewer-report-${fileDate}.pdf`)
+      toast.success("Viewer PDF exported successfully")
+    } catch (err) {
+      toast.error("Failed to export PDF")
+    } finally {
+      setExportingPdf(false)
+    }
   }
 
   return (
@@ -106,12 +179,13 @@ export default function ReportsViewerPage() {
           </div>
           {parsedData && (
             <Button
-              onClick={handlePrint}
+              onClick={handleExportPdf}
+              disabled={exportingPdf}
               variant="outline"
               className="bg-white/50 dark:bg-slate-800/50 hover:bg-white/80 dark:hover:bg-slate-800/80 transition-all rounded-xl shadow-sm"
             >
               <Download className="w-4 h-4 mr-2" />
-              Export PDF
+              {exportingPdf ? "Exporting..." : "Export PDF"}
             </Button>
           )}
         </div>
@@ -199,7 +273,9 @@ export default function ReportsViewerPage() {
                       <p className="text-sm">Arrays as tables, objects as cards.</p>
                     </div>
                   ) : (
-                    <JsonViewer data={parsedData} searchTerm={searchTerm} />
+                    <div ref={viewerExportRef} className="pr-2">
+                      <JsonViewer data={parsedData} searchTerm={searchTerm} />
+                    </div>
                   )}
                 </ScrollArea>
               </CardContent>

@@ -38,8 +38,10 @@ export default function LoginPage() {
 
   return (
     <div className="space-y-6">
-      {/* Logo */}
-      <div className="flex flex-col items-center space-y-2">
+
+      <Card className="relative overflow-hidden border border-white/40 dark:border-white/10 bg-gradient-to-br from-slate-100/75 via-white/50 to-slate-200/65 dark:from-slate-800/70 dark:via-slate-800/45 dark:to-slate-900/70 backdrop-blur-2xl shadow-[0_24px_80px_-28px_rgba(15,23,42,0.9)]">
+        {/* Logo */}
+      <div className="mt-4 flex flex-col items-center space-y-2">
         <div className="flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25">
           <HardHat className="w-7 h-7 text-white" />
         </div>
@@ -48,8 +50,8 @@ export default function LoginPage() {
           Construction Management Platform
         </p>
       </div>
-
-      <Card className="border-0 shadow-xl bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm">
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(120deg,rgba(255,255,255,0.55),rgba(255,255,255,0.12)_44%,rgba(148,163,184,0.2)_72%,rgba(30,41,59,0.26))] dark:bg-[linear-gradient(120deg,rgba(255,255,255,0.16),rgba(255,255,255,0.05)_45%,rgba(148,163,184,0.12)_70%,rgba(2,6,23,0.32))]" />
+        <div className="pointer-events-none absolute inset-x-0 top-0 h-px bg-white/80 dark:bg-white/30" />
         <CardHeader className="space-y-1 pb-4">
           <CardTitle className="text-xl">Sign in</CardTitle>
           <CardDescription>

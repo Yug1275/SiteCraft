@@ -23,7 +23,7 @@ export const getProjects = async (req: Request, res: Response): Promise<void> =>
 
 export const createProject = async (req: Request, res: Response): Promise<void> => {
   try {
-    const { name, location, description, budget, start_date, end_date, manager, user_id, user_email, user_name } = req.body;
+    const { name, location, description, budget, start_date, end_date, manager, progress, user_id, user_email, user_name } = req.body;
 
     if (!name || !location || !user_id) {
       res.status(400).json({ error: 'Name, location and user_id are required' });
@@ -31,6 +31,8 @@ export const createProject = async (req: Request, res: Response): Promise<void> 
     }
 
     const resolvedUserId = await ensureUserExists({ userId: user_id, email: user_email, name: user_name });
+    const parsedProgress = Number.isFinite(Number(progress)) ? Number(progress) : 0;
+    const safeProgress = Math.max(0, Math.min(100, parsedProgress));
 
     const { data, error } = await supabase
       .from('projects')
@@ -42,7 +44,7 @@ export const createProject = async (req: Request, res: Response): Promise<void> 
         start_date: start_date || null,
         end_date: end_date || null,
         status: 'On Track',
-        progress: 0,
+        progress: safeProgress,
         manager: manager || null,
         user_id: resolvedUserId,
       })

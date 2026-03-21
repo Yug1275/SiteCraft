@@ -129,6 +129,13 @@ export default function MaterialsPage() {
   const lowStockCount = materials.filter((m) => m.current_stock < m.minimum_stock).length
   const totalValue = materials.reduce((sum, m) => sum + (m.current_stock || 0) * (m.unit_price || 0), 0)
 
+  const formatInr = (value: number) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 2,
+    }).format(value || 0)
+
   if (authLoading) return <div className="flex items-center justify-center min-h-screen"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" /></div>
   if (!isAuthenticated) return null
 
@@ -148,7 +155,7 @@ export default function MaterialsPage() {
           {[
             { title: "Total Materials", value: materials.length, icon: Package, color: "text-blue-600", sub: "Active items" },
             { title: "Low Stock Alerts", value: lowStockCount, icon: AlertTriangle, color: "text-red-600", sub: "Need attention" },
-            { title: "Total Value", value: `$${totalValue.toLocaleString()}`, icon: TrendingUp, color: "text-green-600", sub: "Current inventory" },
+            { title: "Total Value", value: formatInr(totalValue), icon: TrendingUp, color: "text-green-600", sub: "Current inventory" },
             { title: "Categories", value: categories.length - 1, icon: Filter, color: "text-purple-600", sub: "Material types" },
           ].map((stat, i) => (
             <Card key={i} className="border-0 shadow-lg">
@@ -198,7 +205,7 @@ export default function MaterialsPage() {
                   <div className="space-y-2"><Label>Unit *</Label><Input placeholder="e.g., bags" value={formData.unit} onChange={(e) => setFormData({ ...formData, unit: e.target.value })} /></div>
                 </div>
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-2"><Label>Unit Price ($) *</Label><Input type="number" step="0.01" placeholder="0.00" value={formData.unit_price} onChange={(e) => setFormData({ ...formData, unit_price: e.target.value })} /></div>
+                  <div className="space-y-2"><Label>Unit Price (₹) *</Label><Input type="number" step="0.01" placeholder="0.00" value={formData.unit_price} onChange={(e) => setFormData({ ...formData, unit_price: e.target.value })} /></div>
                   <div className="space-y-2"><Label>Supplier</Label><Input placeholder="Supplier name" value={formData.supplier} onChange={(e) => setFormData({ ...formData, supplier: e.target.value })} /></div>
                 </div>
               </div>
@@ -258,16 +265,16 @@ export default function MaterialsPage() {
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="p-3 rounded-lg bg-white/50 dark:bg-slate-800/50 border border-white/10 dark:border-slate-700/50">
                       <span className="text-muted-foreground block mb-1">Unit Price</span>
-                      <span className="font-semibold">${(m.unit_price || 0).toFixed(2)}</span>
+                      <span className="font-semibold">{formatInr(m.unit_price || 0)}</span>
                     </div>
                     <div className="p-3 rounded-lg bg-white/50 dark:bg-slate-800/50 border border-white/10 dark:border-slate-700/50">
                       <span className="text-muted-foreground block mb-1">Total Value</span>
-                      <span className="font-semibold">${((m.current_stock || 0) * (m.unit_price || 0)).toFixed(2)}</span>
+                      <span className="font-semibold">{formatInr((m.current_stock || 0) * (m.unit_price || 0))}</span>
                     </div>
                   </div>
-                  <div className="flex justify-end gap-2 pt-2">
-                    <Button variant="outline" size="sm" onClick={() => setDeleteId(m.id)}>
-                      <Trash2 className="h-4 w-4 mr-2" /> Delete
+                  <div className="flex gap-2 pt-2 justify-end">
+                    <Button variant="destructive" size="sm" onClick={() => setDeleteId(m.id)} className="px-3">
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardContent>

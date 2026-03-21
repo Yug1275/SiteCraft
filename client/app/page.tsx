@@ -4,8 +4,11 @@ import React from 'react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { HardHat, Building2, Package, Users, ClipboardList, BarChart3, ArrowRight } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
+import { Navbar } from '@/components/navbar'
 
 export default function LandingPage() {
+  const { isAuthenticated, loading } = useAuth()
   const features = [
     { icon: Building2, title: "Project Management", desc: "Track and organize all your construction sites in one place." },
     { icon: Package, title: "Material Tracking", desc: "Monitor inventory levels and get alerts for low stock." },
@@ -16,28 +19,8 @@ export default function LandingPage() {
   ]
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col font-sans">
-      {/* Navbar */}
-      <nav className="sticky top-0 z-50 w-full border-b border-white/20 bg-white/60 dark:bg-slate-900/60 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="flex aspect-square size-8 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25">
-              <HardHat className="size-4" />
-            </div>
-            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-              SiteCraft
-            </span>
-          </div>
-          <div className="flex items-center gap-4">
-            <Link href="/login" className="text-sm font-medium text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors">
-              Sign In
-            </Link>
-            <Button asChild className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white border-0 shadow-lg shadow-blue-500/25 rounded-full px-6">
-              <Link href="/signup">Sign Up</Link>
-            </Button>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 flex flex-col">
+      <Navbar publicMode={!isAuthenticated} />
 
       {/* Hero Section */}
       <main className="flex-1 flex flex-col items-center justify-center text-center px-4 pt-20 pb-32 bg-grid-slate-200 dark:bg-grid-slate-900 bg-[size:3rem_3rem]">
@@ -52,18 +35,20 @@ export default function LandingPage() {
         <p className="text-lg md:text-xl text-slate-600 dark:text-slate-400 max-w-2xl mb-10 leading-relaxed">
           Streamline your workflow from planning to completion. SiteCraft brings your sites, labor, materials, and reports into a single, beautiful dashboard.
         </p>
-        <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
-          <Button asChild size="lg" className="h-14 px-8 text-base bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full shadow-xl shadow-blue-500/20">
-            <Link href="/signup">
-              Get Started <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
-          </Button>
-          <Button asChild size="lg" variant="outline" className="h-14 px-8 text-base rounded-full bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border-slate-200 dark:border-slate-800">
-            <Link href="/login">
-              Sign In
-            </Link>
-          </Button>
-        </div>
+        {!loading && !isAuthenticated && (
+          <div className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto">
+            <Button asChild size="lg" className="h-14 px-8 text-base bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white rounded-full shadow-xl shadow-blue-500/20">
+              <Link href="/signup">
+                Get Started <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+            </Button>
+            <Button asChild size="lg" variant="outline" className="h-14 px-8 text-base rounded-full bg-white/50 dark:bg-slate-900/50 backdrop-blur-xl border-slate-200 dark:border-slate-800">
+              <Link href="/login">
+                Sign In
+              </Link>
+            </Button>
+          </div>
+        )}
       </main>
 
       {/* Features Section */}

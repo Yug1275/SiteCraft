@@ -64,6 +64,14 @@ export default function Dashboard() {
   const lowStockItems = materials.filter((m) => m.current_stock < m.minimum_stock)
   const presentWorkers = workers.filter((w) => w.is_present).length
 
+  const formatInrCompact = (value: number) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      notation: "compact",
+      maximumFractionDigits: 1,
+    }).format(value || 0)
+
   const stats = [
     {
       title: "Active Projects",
@@ -204,11 +212,11 @@ export default function Dashboard() {
                     </div>
                     <div className="grid grid-cols-3 gap-4 text-sm text-muted-foreground mb-3">
                       <div className="flex items-center gap-1">
-                        <DollarSign className="h-4 w-4" />${(project.budget / 1000000).toFixed(1)}M
+                        <DollarSign className="h-4 w-4" />{formatInrCompact(project.budget || 0)}
                       </div>
                       <div className="flex items-center gap-1">
                         <Calendar className="h-4 w-4" />
-                        {project.end_date ? new Date(project.end_date).toLocaleDateString() : "TBD"}
+                        {project.end_date ? new Date(project.end_date).toLocaleDateString("en-IN") : "TBD"}
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="h-4 w-4" />

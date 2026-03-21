@@ -71,9 +71,17 @@ export default function LaborPage() {
   const presentWorkers = workers.filter((w) => w.is_present).length
   const totalWorkers = workers.length
   const attendanceRate = totalWorkers > 0 ? Math.round((presentWorkers / totalWorkers) * 100) : 0
+  const dailyLaborCost = workers.filter((w) => w.is_present).reduce((s, w) => s + (w.hourly_rate || 0) * 8, 0)
+
+  const formatInr = (value: number) =>
+    new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(value || 0)
 
   const toggleAttendance = async (worker: any) => {
-    const currentTime = new Date().toLocaleTimeString("en-US", { hour12: false, hour: "2-digit", minute: "2-digit" })
+    const currentTime = new Date().toLocaleTimeString("en-IN", { hour12: false, hour: "2-digit", minute: "2-digit" })
     try {
       if (worker.is_present) {
         await api.put(`/labor/${worker.id}`, { is_present: false, check_out_time: currentTime })
@@ -161,7 +169,7 @@ export default function LaborPage() {
             { title: "Total Workers", value: totalWorkers, icon: Users, color: "text-blue-600", sub: "Active employees" },
             { title: "Present Today", value: presentWorkers, icon: CheckCircle, color: "text-green-600", sub: "Currently on site", valColor: "text-green-600" },
             { title: "Attendance Rate", value: `${attendanceRate}%`, icon: Clock, color: "text-purple-600", sub: "Today's rate" },
-            { title: "Daily Labor Cost", value: `$${workers.filter((w) => w.is_present).reduce((s, w) => s + (w.hourly_rate || 0) * 8, 0).toFixed(0)}`, icon: DollarSign, color: "text-green-600", sub: "Estimated 8hrs" },
+            { title: "Daily Labor Cost", value: formatInr(dailyLaborCost), icon: DollarSign, color: "text-green-600", sub: "Estimated 8hrs" },
           ].map((s, i) => (
             <Card key={i} className="border-0 shadow-lg">
               <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -194,7 +202,7 @@ export default function LaborPage() {
                 <div className="grid gap-4 py-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2"><Label>Full Name *</Label><Input placeholder="Enter worker name" value={formData.name} onChange={(e) => setFormData({ ...formData, name: e.target.value })} /></div>
-                    <div className="space-y-2"><Label>Phone Number *</Label><Input placeholder="+1-555-0000" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} /></div>
+                    <div className="space-y-2"><Label>Phone Number *</Label><Input placeholder="+91-98765-43210" value={formData.phone} onChange={(e) => setFormData({ ...formData, phone: e.target.value })} /></div>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2"><Label>Role/Trade *</Label>
@@ -205,7 +213,7 @@ export default function LaborPage() {
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2"><Label>Hourly Rate ($) *</Label><Input type="number" step="0.01" placeholder="0.00" value={formData.hourly_rate} onChange={(e) => setFormData({ ...formData, hourly_rate: e.target.value })} /></div>
+                    <div className="space-y-2"><Label>Hourly Rate (₹) *</Label><Input type="number" step="0.01" placeholder="0.00" value={formData.hourly_rate} onChange={(e) => setFormData({ ...formData, hourly_rate: e.target.value })} /></div>
                   </div>
                   <div className="space-y-2"><Label>Assigned Project *</Label>
                     <Select value={formData.project_id} onValueChange={(v) => setFormData({ ...formData, project_id: v })}>
@@ -269,12 +277,17 @@ export default function LaborPage() {
                       <span className="font-medium text-red-600 dark:text-red-400">{w.check_out_time || "-"}</span>
                     </div>
                   </div>
-                  <div className="flex justify-end gap-2 pt-2">
-                    <Button variant={w.is_present ? "destructive" : "default"} size="sm" onClick={() => toggleAttendance(w)} className="rounded-xl">
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toggleAttendance(w)}
+                      className="flex-1 bg-white/50 dark:bg-slate-800/50 hover:bg-white/80 dark:hover:bg-slate-800/80"
+                    >
                       {w.is_present ? "Check Out" : "Check In"}
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setDeleteId(w.id)} className="rounded-xl">
-                      <Trash2 className="h-4 w-4 mr-2" /> Remove
+                    <Button variant="destructive" size="sm" onClick={() => setDeleteId(w.id)} className="px-3">
+                      <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
                 </CardContent>
